@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文章→HTML変換ツール</title>
+    <style>
+        /* ページ全体のスタイル設定 */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        /* タイトルのスタイル */
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* 説明文のスタイル */
+        .description {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
+
+        /* コンテナ全体を横並びにするための設定 */
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* 各パネル（入力欄と結果欄）の共通スタイル */
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* パネルのタイトル */
+        .panel h2 {
+            margin-top: 0;
+            color: #444;
+            font-size: 18px;
+            border-bottom: 2px solid #2196f3;
+            padding-bottom: 10px;
+        }
+
+        /* テキスト入力欄のスタイル */
+        textarea {
+            width: 100%;
+            min-height: 300px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        /* テキスト入力欄にフォーカスした時 */
+        textarea:focus {
+            outline: none;
+            border-color: #2196f3;
+        }
+
+        /* HTML表示エリアのスタイル */
+        .output {
+            width: 100%;
+            min-height: 300px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            box-sizing: border-box;
+        }
+
+        /* ボタンのスタイル */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        /* ボタンにマウスを乗せた時 */
+        button:hover {
+            background-color: #1976d2;
+        }
+
+        /* コピーボタンの色 */
+        .copy-btn {
+            background-color: #4caf50;
+        }
+
+        .copy-btn:hover {
+            background-color: #45a049;
+        }
+
+        /* クリアボタンの色 */
+        .clear-btn {
+            background-color: #f44336;
+        }
+
+        .clear-btn:hover {
+            background-color: #da190b;
+        }
+
+        /* コピー成功メッセージ */
+        .copy-message {
+            display: none;
+            color: #4caf50;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        /* スマホ対応：画面が狭い時は縦並びに */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>📝 文章→HTML変換ツール</h1>
+
+    <div class="description">
+        <strong>使い方：</strong>左の入力欄に文章を入力すると、右側にHTML表記が自動的に表示されます。<br>
+        特殊文字（&lt; &gt; &amp; など）も正しくHTMLコードに変換されます。
+    </div>
+
+    <div class="container">
+        <!-- 左側：文章入力エリア -->
+        <div class="panel">
+            <h2>📥 文章を入力</h2>
+            <textarea id="inputText" placeholder="ここに文章を入力してください...
+
+例：
+こんにちは！
+<div>タグを使います</div>
+特殊文字：& < > &quot;"></textarea>
+        </div>
+
+        <!-- 右側：HTML表記結果エリア -->
+        <div class="panel">
+            <h2>📤 HTML表記</h2>
+            <div id="output" class="output">ここにHTML表記が表示されます</div>
+            <div class="button-group">
+                <button class="copy-btn" onclick="copyToClipboard()">📋 HTMLをコピー</button>
+                <button class="clear-btn" onclick="clearAll()">🗑️ クリア</button>
+            </div>
+            <div id="copyMessage" class="copy-message">✓ コピーしました！</div>
+        </div>
+    </div>
+
+    <script>
+        // 入力欄の要素を取得
+        const inputText = document.getElementById('inputText');
+        // 出力欄の要素を取得
+        const output = document.getElementById('output');
+        // コピー成功メッセージの要素を取得
+        const copyMessage = document.getElementById('copyMessage');
+
+        // 入力欄に文字が入力される度に実行される関数
+        inputText.addEventListener('input', function() {
+            // 入力された文章を取得
+            const text = this.value;
+
+            // 文章をHTML表記に変換
+            const htmlCode = convertToHtml(text);
+
+            // 変換結果を出力欄に表示
+            output.textContent = htmlCode;
+        });
+
+        // 文章をHTML表記に変換する関数
+        function convertToHtml(text) {
+            // 空の場合はメッセージを返す
+            if (!text) {
+                return 'ここにHTML表記が表示されます';
+            }
+
+            // 特殊文字をHTMLエンティティに変換
+            // & → &amp; (最初に変換しないと他の変換と競合する)
+            // < → &lt;
+            // > → &gt;
+            // " → &quot;
+            // ' → &#39;
+            let html = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+
+            return html;
+        }
+
+        // HTMLコードをクリップボードにコピーする関数
+        function copyToClipboard() {
+            // 出力欄のテキストを取得
+            const textToCopy = output.textContent;
+
+            // デフォルトメッセージの場合はコピーしない
+            if (textToCopy === 'ここにHTML表記が表示されます') {
+                alert('コピーする内容がありません');
+                return;
+            }
+
+            // クリップボードにコピー
+            navigator.clipboard.writeText(textToCopy).then(function() {
+                // 成功メッセージを表示
+                copyMessage.style.display = 'block';
+                // 2秒後にメッセージを非表示
+                setTimeout(function() {
+                    copyMessage.style.display = 'none';
+                }, 2000);
+            }).catch(function(err) {
+                // エラーが発生した場合
+                alert('コピーに失敗しました: ' + err);
+            });
+        }
+
+        // すべてクリアする関数
+        function clearAll() {
+            // 入力欄を空にする
+            inputText.value = '';
+            // 出力欄を初期状態に戻す
+            output.textContent = 'ここにHTML表記が表示されます';
+        }
+    </script>
+</body>
+</html>
