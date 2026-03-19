@@ -1,0 +1,30 @@
+{
+  "name": "main",
+  "version": "1.0.0",
+  "description": "Electron application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.example.main",
+    "productName": "Main",
+    "files": [
+      "main.js",
+      "index.html",
+      "package.json"
+    ],
+    "mac": {
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis"
+    }
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  }
+}
