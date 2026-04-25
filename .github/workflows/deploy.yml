@@ -25,13 +25,16 @@ jobs:
 
       - name: Deploy to gh-pages
         run: |
+          cp client/dist/index.html /tmp/index.html
+          cp -r client/dist/assets /tmp/assets
+          cp client/public/editor.html /tmp/editor.html
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin gh-pages
           git checkout gh-pages
-          cp client/dist/index.html .
-          cp -r client/dist/assets .
-          cp client/public/editor.html .
+          cp /tmp/index.html .
+          cp -r /tmp/assets .
+          cp /tmp/editor.html .
           git add index.html assets editor.html
           git diff --staged --quiet || git commit -m "deploy: auto-build from main"
           git push origin gh-pages
