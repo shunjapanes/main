@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/main/',
+  base: '/tsv-editor/',
   server: {
     port: 5173,
   },
