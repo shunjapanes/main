@@ -2180,6 +2180,7 @@
         document.title = "● TSV/CSV Editor";
         if (state.activeTab >= 0 && state.tabs[state.activeTab]) {
           state.tabs[state.activeTab].dirty = true;
+          delete state.tabs[state.activeTab]._isBlankSheet;
           renderTabBar();
         }
       }
@@ -2675,10 +2676,9 @@
             dirty: false,
             _rawText: text, // 遅延復元用にrawTextを保持
           };
-          // 現在のタブが空白シート（未編集・ファイル未読込）なら上書き、それ以外は新タブ
+          // 現在のタブが空白シート（+ボタンで作成・未編集）なら上書き、それ以外は新タブ
           const cur = state.tabs[state.activeTab];
-          const isBlankSheet = cur && !cur.dirty && cur._rawText === undefined &&
-            cur.data && cur.data.length === 1 && cur.data[0].every(v => v === '');
+          const isBlankSheet = cur?._isBlankSheet === true && !cur.dirty;
           if (isBlankSheet) {
             state.tabs[state.activeTab] = tab;
           } else {
@@ -2688,6 +2688,7 @@
           updateHeaderModeBtn();
           renderTabBar();
           autoFitAllColumnsQuiet();
+          state.tabs[state.activeTab].colWidths = { ...state.colWidths };
           renderHeader();
           state.forceRender = true;
           renderBody();
@@ -6074,6 +6075,7 @@
           sortKeys: [],
           headerMode: "firstRow",
           dirty: false,
+          _isBlankSheet: true,
         };
         state.tabs.push(tab);
         state.activeTab = state.tabs.length - 1;
