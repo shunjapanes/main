@@ -693,6 +693,19 @@
         min-width: 200px;
         z-index: 1001;
       }
+      /* ラベル→サブメニュー間のギャップを埋める透明ブリッジ（mouseleave誤発火防止） */
+      .ctx-submenu::before {
+        content: '';
+        position: absolute;
+        right: 100%;
+        top: 0;
+        width: 8px;
+        height: 100%;
+      }
+      .ctx-submenu.open-left::before {
+        right: auto;
+        left: 100%;
+      }
       .ctx-group .ctx-submenu.open {
         display: block;
       }
@@ -6060,12 +6073,14 @@
               sub.classList.remove("open");
               const closeLabel = sub.previousElementSibling;
               if (closeLabel) closeLabel.setAttribute("aria-expanded", "false");
-            }, 120);
+            }, 200);
           };
           grp.addEventListener("mouseenter", openSub);
           grp.addEventListener("mouseleave", closeSub);
           sub.addEventListener("mouseenter", () => clearTimeout(_subTimer));
           sub.addEventListener("mouseleave", closeSub);
+          // コンテキストメニュー本体に戻った時も閉じタイマーをキャンセル
+          els.ctxMenu.addEventListener("mouseenter", () => clearTimeout(_subTimer));
         });
 
         // リーフアイテムのクリック・キーボードハンドラ
