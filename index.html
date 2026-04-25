@@ -4125,35 +4125,32 @@
         if (!_dragScrollTimer) startDragAutoScroll();
       }
       function startDragAutoScroll() {
-        const EDGE = 30; // 端からのピクセル数
-        const SPEED = 8; // スクロール速度
+        const EDGE = 80;      // スクロール開始する端からの距離(px)
+        const MAX_SPEED = 24; // 最大スクロール速度(px/tick)
         _dragScrollTimer = setInterval(() => {
           if (!state.isDrag) {
             stopDragAutoScroll();
             return;
           }
           const rect = els.container.getBoundingClientRect();
+
+          // エッジからの食み出し量(0〜EDGE)をもとに速度を二乗カーブで計算
+          function calcSpeed(overshoot) {
+            const ratio = Math.min(overshoot / EDGE, 1);
+            return Math.ceil(ratio * ratio * MAX_SPEED);
+          }
+
           let scrolled = false;
-          // 下端
-          if (_dragMouseY > rect.bottom - EDGE) {
-            els.container.scrollTop += SPEED;
-            scrolled = true;
-          }
-          // 上端（コンテナの外に出ても継続してスクロール）
-          if (_dragMouseY < rect.top + EDGE) {
-            els.container.scrollTop -= SPEED;
-            scrolled = true;
-          }
-          // 右端
-          if (_dragMouseX > rect.right - EDGE) {
-            els.container.scrollLeft += SPEED;
-            scrolled = true;
-          }
-          // 左端（コンテナの外に出ても継続してスクロール）
-          if (_dragMouseX < rect.left + EDGE) {
-            els.container.scrollLeft -= SPEED;
-            scrolled = true;
-          }
+          const overBottom = _dragMouseY - (rect.bottom - EDGE);
+          const overTop    = (rect.top + EDGE) - _dragMouseY;
+          const overRight  = _dragMouseX - (rect.right - EDGE);
+          const overLeft   = (rect.left + EDGE) - _dragMouseX;
+
+          if (overBottom > 0) { els.container.scrollTop  += calcSpeed(overBottom); scrolled = true; }
+          if (overTop    > 0) { els.container.scrollTop  -= calcSpeed(overTop);    scrolled = true; }
+          if (overRight  > 0) { els.container.scrollLeft += calcSpeed(overRight);  scrolled = true; }
+          if (overLeft   > 0) { els.container.scrollLeft -= calcSpeed(overLeft);   scrolled = true; }
+
           if (scrolled) expandDragRange();
         }, 16); // ~60fps
       }
