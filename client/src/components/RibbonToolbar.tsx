@@ -175,7 +175,7 @@ function ToolsTab() {
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="出力・プレビュー">
-        <RibbonButton icon={Globe} label="HTMLプレビュー" onClick={() => send('htmlPreview')} title="HTMLプレビューを表示" />
+        <RibbonButton icon={Globe} label="プレビュー" onClick={() => send('htmlPreview')} title="HTMLプレビューを表示" />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="分析">

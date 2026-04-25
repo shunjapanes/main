@@ -30,7 +30,7 @@ export default function RibbonButton({ icon: Icon, label, onClick, disabled, act
       disabled={disabled}
     >
       <Icon size={size === 'large' ? 22 : 18} strokeWidth={1.5} />
-      <span className="text-[9px] leading-tight text-center whitespace-nowrap overflow-hidden w-full" style={{ maxWidth: '100%' }}>
+      <span className="text-[9px] leading-tight text-center break-all line-clamp-2 w-full">
         {label}
       </span>
     </button>
