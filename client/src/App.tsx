@@ -49,7 +49,7 @@ export default function App() {
       <iframe
         ref={iframeRef}
         id="editor-frame"
-        src="/editor.html"
+        src={`${import.meta.env.BASE_URL}editor.html`}
         className="flex-1 w-full border-none"
         title="TSV/CSV エディタ"
         allow="clipboard-read; clipboard-write"
