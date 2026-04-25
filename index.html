@@ -1994,11 +1994,22 @@
           <div>
             <h3 style="margin:10px 0 6px;font-size:11px;color:var(--text-dim)">行操作・表示</h3>
             <div class="man-row"><span>下に行を追加</span><span class="man-key">Ctrl+Enter</span></div>
+            <div class="man-row"><span>行全体を選択</span><span class="man-key">Shift+Space</span></div>
+            <div class="man-row"><span>列全体を選択</span><span class="man-key">Ctrl+Space</span></div>
+            <div class="man-row"><span>上に行を挿入</span><span class="man-key">Alt+Shift+↑</span></div>
+            <div class="man-row"><span>下に行を挿入</span><span class="man-key">Ctrl+Enter</span></div>
             <div class="man-row"><span>行を複製</span><span class="man-key">Ctrl+Shift+D</span></div>
             <div class="man-row"><span>選択行を削除</span><span class="man-key">Ctrl+Shift+K</span></div>
+            <div class="man-row"><span>左に列を挿入</span><span class="man-key">Alt+Shift+←</span></div>
+            <div class="man-row"><span>右に列を挿入</span><span class="man-key">Alt+Shift+→</span></div>
             <div class="man-row"><span>選択列を削除</span><span class="man-key">Ctrl+Alt+K</span></div>
             <div class="man-row"><span>行を上に移動</span><span class="man-key">Alt+↑</span></div>
             <div class="man-row"><span>行を下に移動</span><span class="man-key">Alt+↓</span></div>
+            <div class="man-row"><span>行を非表示</span><span class="man-key">Ctrl+Shift+H</span></div>
+            <div class="man-row"><span>列を非表示</span><span class="man-key">Ctrl+Alt+H</span></div>
+            <div class="man-row"><span>非表示行を再表示</span><span class="man-key">Ctrl+Shift+U</span></div>
+            <div class="man-row"><span>非表示列を再表示</span><span class="man-key">Ctrl+Alt+U</span></div>
+            <div class="man-row"><span>列フリーズ切替</span><span class="man-key">Ctrl+Shift+F</span></div>
             <div class="man-row"><span>検索</span><span class="man-key">Ctrl+F</span></div>
             <div class="man-row"><span>検索と置換</span><span class="man-key">Ctrl+H</span></div>
             <div class="man-row"><span>行番号ジャンプ</span><span class="man-key">Ctrl+G</span></div>
@@ -4614,6 +4625,102 @@
           deleteSelectedCols();
           return;
         }
+        // 行を選択 (Shift+Space)
+        if (key === " " && shiftKey && !cmd && state.selected) {
+          e.preventDefault();
+          const r = state.selected.row;
+          state.anchor = { row: r, col: 0 };
+          state.selected = { row: r, col: 0 };
+          state.range = { r1: r, c1: 0, r2: r, c2: state.headers.length - 1 };
+          state.forceRender = true;
+          renderHeader();
+          renderBody();
+          updateHighlight();
+          return;
+        }
+        // 列を選択 (Ctrl+Space)
+        if (key === " " && cmd && !shiftKey && state.selected) {
+          e.preventDefault();
+          selectColumn(state.selected.col);
+          return;
+        }
+        // 上に行を挿入 (Alt+Shift+↑)
+        if (e.altKey && shiftKey && key === "ArrowUp" && state.selected) {
+          e.preventDefault();
+          saveUndo();
+          state.data.splice(state.selected.row, 0, new Array(state.headers.length).fill(""));
+          markDirty();
+          applyFilters();
+          state.forceRender = true;
+          renderBody();
+          return;
+        }
+        // 左に列を挿入 (Alt+Shift+←)
+        if (e.altKey && shiftKey && key === "ArrowLeft" && state.selected) {
+          e.preventDefault();
+          const c = state.selected.col;
+          saveUndo();
+          state.headers.splice(c, 0, "列" + (state.headers.length + 1));
+          state.data.forEach((r) => r.splice(c, 0, ""));
+          shiftColIndices(c, 1);
+          markDirty();
+          renderHeader();
+          state.forceRender = true;
+          renderBody();
+          return;
+        }
+        // 右に列を挿入 (Alt+Shift+→)
+        if (e.altKey && shiftKey && key === "ArrowRight" && state.selected) {
+          e.preventDefault();
+          const c = state.selected.col + 1;
+          saveUndo();
+          state.headers.splice(c, 0, "列" + (state.headers.length + 1));
+          state.data.forEach((r) => r.splice(c, 0, ""));
+          shiftColIndices(c, 1);
+          markDirty();
+          renderHeader();
+          state.forceRender = true;
+          renderBody();
+          return;
+        }
+        // 行を非表示 (Ctrl+Shift+H)
+        if (cmd && shiftKey && (key === "H" || key === "h")) {
+          e.preventDefault();
+          if (state.range) {
+            hideRows(Math.min(state.range.r1, state.range.r2), Math.max(state.range.r1, state.range.r2));
+          } else if (state.selected) {
+            hideRows(state.selected.row, state.selected.row);
+          }
+          return;
+        }
+        // 列を非表示 (Ctrl+Alt+H)
+        if (cmd && e.altKey && (key === "H" || key === "h")) {
+          e.preventDefault();
+          if (state.range) {
+            hideCols(Math.min(state.range.c1, state.range.c2), Math.max(state.range.c1, state.range.c2));
+          } else if (state.selected) {
+            hideCols(state.selected.col, state.selected.col);
+          }
+          return;
+        }
+        // 非表示行を再表示 (Ctrl+Shift+U)
+        if (cmd && shiftKey && (key === "U" || key === "u")) {
+          e.preventDefault();
+          showAllRows();
+          return;
+        }
+        // 非表示列を再表示 (Ctrl+Alt+U)
+        if (cmd && e.altKey && (key === "U" || key === "u")) {
+          e.preventDefault();
+          showAllCols();
+          return;
+        }
+        // この列までフリーズ (Ctrl+Shift+F)
+        if (cmd && shiftKey && (key === "F" || key === "f")) {
+          e.preventDefault();
+          toggleFreezeColumn();
+          return;
+        }
         if (e.altKey && (key === "r" || key === "R")) {
           e.preventDefault();
           toggleRegexMode();
@@ -5523,6 +5630,7 @@
             children: [
               {
                 label: "セルを編集",
+                key: "Enter / F2",
                 action: () => {
                   const t = getSelTd();
                   if (t) startEdit(row, col, t);
@@ -5540,6 +5648,7 @@
             children: [
               {
                 label: "この行を選択",
+                key: "Shift+Space",
                 action: () => {
                   state.selected = { row, col: 0 };
                   state.anchor = { row, col: 0 };
@@ -5552,7 +5661,7 @@
                   updateHighlight();
                 },
               },
-              { label: "この列を選択", action: () => selectColumn(col) },
+              { label: "この列を選択", key: "Ctrl+Space", action: () => selectColumn(col) },
               { label: "全選択", key: "Ctrl+A", action: selectAll },
             ],
           },
@@ -5562,6 +5671,7 @@
             children: [
               {
                 label: "上に行を挿入",
+                key: "Alt+Shift+↑",
                 action: () => {
                   saveUndo();
                   state.data.splice(
@@ -5577,6 +5687,7 @@
               },
               {
                 label: "下に行を挿入",
+                key: "Ctrl+Enter",
                 action: () => {
                   saveUndo();
                   state.data.splice(
@@ -5660,6 +5771,7 @@
             children: [
               {
                 label: "左に列を挿入",
+                key: "Alt+Shift+←",
                 action: () => {
                   saveUndo();
                   state.headers.splice(
@@ -5677,6 +5789,7 @@
               },
               {
                 label: "右に列を挿入",
+                key: "Alt+Shift+→",
                 action: () => {
                   saveUndo();
                   state.headers.splice(
@@ -5756,6 +5869,7 @@
               { sep: true },
               {
                 label: "この列までフリーズ",
+                key: "Ctrl+Shift+F",
                 action: () => {
                   state.selected = { row, col };
                   toggleFreezeColumn();
@@ -5791,7 +5905,11 @@
             group: "表示",
             icon: "⊙",
             children: [
-              { label: "この行を非表示", action: () => hideRows(row, row) },
+              {
+                label: "この行を非表示",
+                key: "Ctrl+Shift+H",
+                action: () => hideRows(row, row),
+              },
               {
                 label: (() => {
                   if (state.range) {
@@ -5800,6 +5918,7 @@
                   }
                   return "選択行を非表示";
                 })(),
+                key: "Ctrl+Shift+H",
                 action: () => {
                   if (state.range) {
                     hideRows(
@@ -5809,7 +5928,11 @@
                   } else hideRows(row, row);
                 },
               },
-              { label: "この列を非表示", action: () => hideCols(col, col) },
+              {
+                label: "この列を非表示",
+                key: "Ctrl+Alt+H",
+                action: () => hideCols(col, col),
+              },
               {
                 label: (() => {
                   if (state.range) {
@@ -5818,6 +5941,7 @@
                   }
                   return "選択列を非表示";
                 })(),
+                key: "Ctrl+Alt+H",
                 action: () => {
                   if (state.range) {
                     hideCols(
@@ -5832,6 +5956,7 @@
                     { sep: true },
                     {
                       label: `非表示行を再表示 (${state.hiddenRows.size}行)`,
+                      key: "Ctrl+Shift+U",
                       action: showAllRows,
                     },
                   ]
@@ -5840,6 +5965,7 @@
                 ? [
                     {
                       label: `非表示列を再表示 (${state.hiddenCols.size}列)`,
+                      key: "Ctrl+Alt+U",
                       action: showAllCols,
                     },
                   ]
