@@ -8,10 +8,6 @@ export default function SearchBar() {
   const [showReplace, setShowReplace] = useState(false)
   const [rowNum, setRowNum] = useState('')
 
-  const doSearch = () => {
-    send('search', query)
-  }
-
   const doGotoRow = () => {
     if (rowNum) send('gotoRow', rowNum)
   }
@@ -27,7 +23,10 @@ export default function SearchBar() {
           value={query}
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => {
-            if (e.key === 'Enter') { e.shiftKey ? send('searchPrev') : send('searchNext') }
+            if (e.key === 'Enter') {
+              send('search', query)
+              e.shiftKey ? send('searchPrev') : send('searchNext')
+            }
             if (e.key === 'Escape') { setQuery(''); send('clearSearch') }
           }}
         />
@@ -38,10 +37,10 @@ export default function SearchBar() {
         )}
       </div>
 
-      <button className="p-1 rounded hover:bg-gray-100 text-gray-600" onClick={() => send('searchPrev')} title="前を検索 (Shift+Enter)">
+      <button className="p-1 rounded hover:bg-gray-100 text-gray-600" onClick={() => { send('search', query); send('searchPrev') }} title="前を検索 (Shift+Enter)">
         <ChevronUp size={14} />
       </button>
-      <button className="p-1 rounded hover:bg-gray-100 text-gray-600" onClick={() => doSearch()} title="次を検索 (Enter)">
+      <button className="p-1 rounded hover:bg-gray-100 text-gray-600" onClick={() => { send('search', query); send('searchNext') }} title="次を検索 (Enter)">
         <ChevronDown size={14} />
       </button>
 

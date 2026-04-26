@@ -7,7 +7,7 @@ interface Props {
 
 export default function RibbonGroup({ label, children }: Props) {
   return (
-    <div className="flex flex-col items-stretch h-full">
+    <div className="flex flex-col items-stretch h-full flex-shrink-0">
       <div className="flex flex-row items-center gap-0.5 flex-1 px-1 pt-1">
         {children}
       </div>
