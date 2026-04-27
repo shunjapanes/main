@@ -8144,6 +8144,54 @@
       if (window.self === window.top) return;
 
       // ---- postMessage → editor function dispatch ----
+      // Helpers for ribbon bridge
+      function _ribGetCurCol() {
+        if (typeof state === 'undefined') return -1;
+        if (state.selected && typeof state.selected.col === 'number') return state.selected.col;
+        if (state.range && typeof state.range.c1 === 'number') return Math.min(state.range.c1, state.range.c2);
+        if (typeof state.selectedCol === 'number') return state.selectedCol;
+        return -1;
+      }
+      function _ribRequireSel(actionName) {
+        if (typeof state === 'undefined' || !state.selected) {
+          if (typeof setStatus === 'function') {
+            setStatus('セルを選択してから「' + actionName + '」を実行してください');
+          }
+          return false;
+        }
+        return true;
+      }
+      function _ribExport(format) {
+        if (typeof state === 'undefined') return;
+        var d = format === 'tsv' ? '\t' : ',';
+        var esc = function(v) {
+          var s = String(v == null ? '' : v);
+          return s.indexOf(d) >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0 || s.indexOf('\r') >= 0
+            ? '"' + s.replace(/"/g, '""') + '"'
+            : s;
+        };
+        var rows = (state.filteredIndices && state.filteredIndices.length)
+          ? state.filteredIndices
+          : state.data.map(function(_, i) { return i; });
+        var dataLines = rows.map(function(i) { return (state.data[i] || []).map(esc).join(d); }).join('\n');
+        var txt = state.headerMode === 'numbered'
+          ? dataLines
+          : (state.headers || []).map(esc).join(d) + '\n' + dataLines;
+        var bom = state.encoding === 'utf8bom' ? '\uFEFF' : '';
+        var blob = new Blob([bom + txt], { type: 'text/plain' });
+        var baseName = (state.fileName || 'data').replace(/\.[^.]+$/, '');
+        var fileName = baseName + '.' + format;
+        var a = document.createElement('a');
+        var url = URL.createObjectURL(blob);
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+        if (typeof setStatus === 'function') {
+          setStatus(rows.length + '行を ' + format.toUpperCase() + ' で出力しました');
+        }
+      }
+
       window.addEventListener('message', function(e) {
         if (e.source !== window.parent) return;
         var msg = e.data || {};
@@ -8154,9 +8202,9 @@
           'new':             function() { resetState(); },
           'open':            function() { var el = document.getElementById('open-input'); if(el) el.click(); },
           'save':            function() { saveFile(); },
-          'saveAs':          function() { saveFile(); }, // saveFile handles save-as dialog
-          'exportTsv':       function() { exportFiltered('tsv'); },
-          'exportCsv':       function() { exportFiltered('csv'); },
+          'saveAs':          function() { saveFile(); },
+          'exportTsv':       function() { _ribExport('tsv'); },
+          'exportCsv':       function() { _ribExport('csv'); },
           'exportHtml':      function() { exportHtmlPreview(); },
           'recentMenu':      function() { openRecentMenu(); },
           'addSheet':        function() { addNewSheet(); },
@@ -8166,21 +8214,50 @@
           'copy':            function() { copyToClipboard(); },
           'paste':           function() { pasteFromClipboard(); },
           'toggleFilter':    function() { toggleFilter(); },
-          'sortAsc':         function() { if(typeof state !== 'undefined') sortByColumn(state.curCol); },
-          'sortDesc':        function() { if(typeof state !== 'undefined') sortByColumn(state.curCol, false, true); },
+          'sortAsc':         function() {
+            var col = _ribGetCurCol();
+            if (col < 0) { setStatus('ソートする列のセルを選択してください'); return; }
+            // Force ascending: set state.sortCol so the toggle in sortByColumn flips to true
+            state.sortCol = col;
+            state.sortAsc = false;
+            sortByColumn(col);
+          },
+          'sortDesc':        function() {
+            var col = _ribGetCurCol();
+            if (col < 0) { setStatus('ソートする列のセルを選択してください'); return; }
+            // Force descending: set state.sortAsc=true so the toggle flips to false
+            state.sortCol = col;
+            state.sortAsc = true;
+            sortByColumn(col);
+          },
           'autoFit':         function() { autoFitAllColumns(); },
-          'insertRowAbove':  function() { onKeyDown({ key: 'ArrowUp',    altKey: true, shiftKey: true, ctrlKey: false, metaKey: false, preventDefault: function(){} }); },
+          'insertRowAbove':  function() {
+            if (!_ribRequireSel('上に行挿入')) return;
+            onKeyDown({ key: 'ArrowUp', altKey: true, shiftKey: true, ctrlKey: false, metaKey: false, preventDefault: function(){} });
+          },
           'insertRowBelow':  function() { addRowBelow(); },
-          'insertColLeft':   function() { onKeyDown({ key: 'ArrowLeft',  altKey: true, shiftKey: true, ctrlKey: false, metaKey: false, preventDefault: function(){} }); },
-          'insertColRight':  function() { onKeyDown({ key: 'ArrowRight', altKey: true, shiftKey: true, ctrlKey: false, metaKey: false, preventDefault: function(){} }); },
-          'deleteRows':      function() { deleteSelectedRows(); },
-          'deleteCols':      function() { deleteSelectedCols(); },
+          'insertColLeft':   function() {
+            if (!_ribRequireSel('左に列挿入')) return;
+            onKeyDown({ key: 'ArrowLeft', altKey: true, shiftKey: true, ctrlKey: false, metaKey: false, preventDefault: function(){} });
+          },
+          'insertColRight':  function() {
+            if (!_ribRequireSel('右に列挿入')) return;
+            onKeyDown({ key: 'ArrowRight', altKey: true, shiftKey: true, ctrlKey: false, metaKey: false, preventDefault: function(){} });
+          },
+          'deleteRows':      function() {
+            if (!state.range && !state.selected) { setStatus('削除する行を選択してください'); return; }
+            deleteSelectedRows();
+          },
+          'deleteCols':      function() {
+            if (!state.range && !state.selected) { setStatus('削除する列を選択してください'); return; }
+            deleteSelectedCols();
+          },
           'deleteEmptyRows': function() { deleteEmptyRows(); },
           'deleteDuplicates':function() { deleteDuplicates(); },
           'trimCells':       function() { trimAllCells(); },
-          'moveRowUp':       function() { moveRowUp(); },
-          'moveRowDown':     function() { moveRowDown(); },
-          'duplicateRow':    function() { duplicateRow(); },
+          'moveRowUp':       function() { if (!_ribRequireSel('行を上に移動')) return; moveRowUp(); },
+          'moveRowDown':     function() { if (!_ribRequireSel('行を下に移動')) return; moveRowDown(); },
+          'duplicateRow':    function() { if (!_ribRequireSel('行を複製')) return; duplicateRow(); },
           'toggleVertHeader':function() { toggleVerticalHeader(); },
           'toggleWrap':      function() { toggleWrapCells(); },
           'toggleFreeze':    function() { toggleFreezeColumn(); },
@@ -8192,7 +8269,11 @@
           'loadSejMaster':   function() { var el = document.getElementById('sej-master-input'); if(el) el.click(); },
           'toggleSej':       function() { toggleSejLink(); },
           'htmlPreview':     function() { exportHtmlPreview(); },
-          'colStats':        function() { if(typeof state !== 'undefined') showColStats(state.curCol); },
+          'colStats':        function() {
+            var col = _ribGetCurCol();
+            if (col < 0) { setStatus('統計を見る列のセルを選択してください'); return; }
+            showColStats(col);
+          },
           'dictEditor':      function() { openDictEditor(); },
           'showHelp':        function() { showManual(); },
           'switchTab':       function() { if(typeof payload === 'number') switchTab(payload); },
