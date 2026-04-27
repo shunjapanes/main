@@ -52,7 +52,7 @@ export default function App() {
         src={`${import.meta.env.BASE_URL}editor.html`}
         className="flex-1 w-full border-none"
         title="TSV/CSV エディタ"
-        allow="clipboard-read; clipboard-write"
+        allow="clipboard-read; clipboard-write; popups"
       />
       <FileTabBar tabs={tabs} activeTab={activeTab} />
       <StatusBar status={status} position={position} stats={stats} />
