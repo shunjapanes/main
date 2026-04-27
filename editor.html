@@ -8199,8 +8199,8 @@
         var payload = msg.payload;
 
         var dispatch = {
-          'new':             function() { resetState(); },
-          'open':            function() { var el = document.getElementById('open-input'); if(el) el.click(); },
+          'new':             function() { addNewSheet(); },
+          'open':            function() { if (els && els.fileInput) els.fileInput.click(); },
           'save':            function() { saveFile(); },
           'saveAs':          function() { saveFile(); },
           'exportTsv':       function() { _ribExport('tsv'); },
@@ -8217,32 +8217,40 @@
           'sortAsc':         function() {
             var col = _ribGetCurCol();
             if (col < 0) { setStatus('ソートする列のセルを選択してください'); return; }
-            // Force ascending: set state.sortCol so the toggle in sortByColumn flips to true
-            state.sortCol = col;
-            state.sortAsc = false;
+            state.sortCol = col; state.sortAsc = false;
             sortByColumn(col);
           },
           'sortDesc':        function() {
             var col = _ribGetCurCol();
             if (col < 0) { setStatus('ソートする列のセルを選択してください'); return; }
-            // Force descending: set state.sortAsc=true so the toggle flips to false
-            state.sortCol = col;
-            state.sortAsc = true;
+            state.sortCol = col; state.sortAsc = true;
             sortByColumn(col);
           },
           'autoFit':         function() { autoFitAllColumns(); },
           'insertRowAbove':  function() {
             if (!_ribRequireSel('上に行挿入')) return;
-            onKeyDown({ key: 'ArrowUp', altKey: true, shiftKey: true, ctrlKey: false, metaKey: false, preventDefault: function(){} });
+            saveUndo();
+            state.data.splice(state.selected.row, 0, new Array(state.headers.length).fill(''));
+            markDirty(); applyFilters(); state.forceRender = true; renderBody();
           },
           'insertRowBelow':  function() { addRowBelow(); },
           'insertColLeft':   function() {
             if (!_ribRequireSel('左に列挿入')) return;
-            onKeyDown({ key: 'ArrowLeft', altKey: true, shiftKey: true, ctrlKey: false, metaKey: false, preventDefault: function(){} });
+            var c = state.selected.col;
+            saveUndo();
+            state.headers.splice(c, 0, '列' + (state.headers.length + 1));
+            state.data.forEach(function(r) { r.splice(c, 0, ''); });
+            shiftColIndices(c, 1);
+            markDirty(); renderHeader(); state.forceRender = true; renderBody();
           },
           'insertColRight':  function() {
             if (!_ribRequireSel('右に列挿入')) return;
-            onKeyDown({ key: 'ArrowRight', altKey: true, shiftKey: true, ctrlKey: false, metaKey: false, preventDefault: function(){} });
+            var c = state.selected.col + 1;
+            saveUndo();
+            state.headers.splice(c, 0, '列' + (state.headers.length + 1));
+            state.data.forEach(function(r) { r.splice(c, 0, ''); });
+            shiftColIndices(c, 1);
+            markDirty(); renderHeader(); state.forceRender = true; renderBody();
           },
           'deleteRows':      function() {
             if (!state.range && !state.selected) { setStatus('削除する行を選択してください'); return; }
@@ -8266,7 +8274,7 @@
           'toggleCondHL':    function() { toggleConditionalHL(); },
           'dupHighlight':    function() { openDupHlDialog(); },
           'resetView':       function() { resetView(); },
-          'loadSejMaster':   function() { var el = document.getElementById('sej-master-input'); if(el) el.click(); },
+          'loadSejMaster':   function() { toggleSejLink(); },
           'toggleSej':       function() { toggleSejLink(); },
           'htmlPreview':     function() { exportHtmlPreview(); },
           'colStats':        function() {
@@ -8280,18 +8288,11 @@
           'closeTab':        function() { if(typeof payload === 'number') closeTab(payload); },
           'gotoRow':         function() { if(payload) gotoRow(payload); },
           'search':          function() {
-            var inp = document.getElementById('search-input');
-            if (inp && payload) {
-              inp.value = payload;
-              execSearch();
-            }
+            if (payload) { els.search.value = payload; execSearch(); }
           },
           'searchNext':      function() { moveSearch(1); },
           'searchPrev':      function() { moveSearch(-1); },
-          'clearSearch':     function() {
-            var inp = document.getElementById('search-input');
-            if (inp) { inp.value = ''; execSearch(); }
-          },
+          'clearSearch':     function() { els.search.value = ''; execSearch(); },
           'replaceOne':      function() {
             var inp = document.getElementById('replace-input');
             if (inp && payload !== undefined) { inp.value = payload; replaceOne(); }
@@ -8306,6 +8307,17 @@
           try { dispatch[action](); } catch(err) { console.warn('[bridge]', action, err); }
         }
       });
+
+      // ---- Move #recent-menu out of hidden #toolbar so it can show ----
+      (function() {
+        var menu = document.getElementById('recent-menu');
+        if (menu && menu.parentElement && menu.parentElement.id === 'toolbar') {
+          menu.style.position = 'fixed';
+          menu.style.top = '110px';
+          menu.style.left = '8px';
+          document.body.appendChild(menu);
+        }
+      })();
 
       // ---- Proxy setStatus → postMessage to parent ----
       var _origSetStatus = window.setStatus;
