@@ -8130,18 +8130,15 @@
     </script>
 
     <!-- ===== RIBBON BRIDGE PATCH ===== -->
-    <style>
-      /* Hide native toolbar/statusbar/tabbar when running inside ribbon wrapper */
-      #toolbar, #search-area, #tab-bar, #statusbar {
-        display: none !important;
-      }
-      /* Main area fills full height when toolbar/statusbar are hidden */
-      body { height: 100vh !important; }
-    </style>
     <script>
     (function() {
       // Only activate bridge when inside an iframe
       if (window.self === window.top) return;
+
+      // Hide native toolbar/statusbar/tabbar only when inside ribbon wrapper
+      var bridgeStyle = document.createElement('style');
+      bridgeStyle.textContent = '#toolbar, #search-area, #tab-bar, #statusbar { display: none !important; }';
+      document.head.appendChild(bridgeStyle);
 
       // ---- postMessage → editor function dispatch ----
       // Helpers for ribbon bridge
