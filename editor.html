@@ -8321,6 +8321,11 @@
 
         if (dispatch[action]) {
           try { dispatch[action](); } catch(err) { console.warn('[bridge]', action, err); }
+          // Sync tab state after actions that change tab list or dirty state
+          if (action === 'closeTab' || action === 'new' || action === 'addSheet' ||
+              action === 'switchTab' || action === 'save' || action === 'open') {
+            setTimeout(_ribSendTabs, 100);
+          }
         }
       });
 
