@@ -8297,7 +8297,8 @@
           'closeTab':        function() { if(typeof payload === 'number') closeTab(payload); },
           'gotoRow':         function() { if(payload) gotoRow(payload); },
           'search':          function() {
-            if (payload) { els.search.value = payload; execSearch(); }
+            els.search.value = payload != null ? payload : '';
+            execSearch();
           },
           'searchNext':      function() { moveSearch(1); },
           'searchPrev':      function() { moveSearch(-1); },
@@ -8340,7 +8341,7 @@
         var menu = document.getElementById('recent-menu');
         if (menu && menu.parentElement && menu.parentElement.id === 'toolbar') {
           menu.style.position = 'fixed';
-          menu.style.top = '110px';
+          menu.style.top = '4px';
           menu.style.left = '8px';
           document.body.appendChild(menu);
         }

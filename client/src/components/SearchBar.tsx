@@ -29,6 +29,7 @@ export default function SearchBar({ inputRef }: Props) {
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => {
             if (e.key === 'Enter') {
+              if (!query) { send('clearSearch'); return }
               send('search', query)
               e.shiftKey ? send('searchPrev') : send('searchNext')
             }
