@@ -6,7 +6,7 @@ import {
   MoveUp, MoveDown, CopyPlus, AlignLeft, WrapText, PanelLeft, AlignVerticalJustifyCenter,
   Shrink, Highlighter, Layers, RefreshCw,
   Database, Link, Globe, BarChart2, BookOpen, HelpCircle, Eraser,
-  ArrowLeftToLine, ArrowRightToLine
+  ArrowLeftToLine, ArrowRightToLine, Search
 } from 'lucide-react'
 import RibbonGroup from './RibbonGroup'
 import RibbonButton from './RibbonButton'
@@ -15,7 +15,11 @@ import { send } from '../lib/bridge'
 const TABS = ['ファイル', 'ホーム', 'データ', '表示', 'ツール'] as const
 type Tab = typeof TABS[number]
 
-export default function RibbonToolbar() {
+interface Props {
+  onFocusSearch?: () => void
+}
+
+export default function RibbonToolbar({ onFocusSearch }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('ホーム')
 
   return (
@@ -40,7 +44,7 @@ export default function RibbonToolbar() {
       {/* Ribbon content */}
       <div className="flex flex-row items-stretch h-[72px] gap-0 overflow-x-auto overflow-y-hidden">
         {activeTab === 'ファイル' && <FileTab />}
-        {activeTab === 'ホーム' && <HomeTab />}
+        {activeTab === 'ホーム' && <HomeTab onFocusSearch={onFocusSearch} />}
         {activeTab === 'データ' && <DataTab />}
         {activeTab === '表示' && <ViewTab />}
         {activeTab === 'ツール' && <ToolsTab />}
@@ -80,7 +84,7 @@ function FileTab() {
   )
 }
 
-function HomeTab() {
+function HomeTab({ onFocusSearch }: { onFocusSearch?: () => void }) {
   return (
     <>
       <RibbonGroup label="元に戻す">
@@ -102,6 +106,10 @@ function HomeTab() {
       <Divider />
       <RibbonGroup label="セル">
         <RibbonButton icon={ALargeSmall} label="列幅自動調整" onClick={() => send('autoFit')} title="全列幅を自動調整 (Ctrl+Shift+U)" />
+      </RibbonGroup>
+      <Divider />
+      <RibbonGroup label="検索">
+        <RibbonButton icon={Search} label="検索欄へ" onClick={() => onFocusSearch?.()} title="検索入力欄にフォーカス (Ctrl+F)" />
       </RibbonGroup>
     </>
   )

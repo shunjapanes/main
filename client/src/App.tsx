@@ -11,7 +11,7 @@ interface Tab {
 
 interface EditorMessage {
   type: 'status' | 'tabs' | 'position' | 'stats' | 'popup'
-  url?: string | 'popup'
+  url?: string
   text?: string
   tabs?: Tab[]
   activeTab?: number
@@ -21,6 +21,7 @@ interface EditorMessage {
 
 export default function App() {
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const [status, setStatus] = useState('準備完了')
   const [tabs, setTabs] = useState<Tab[]>([{ name: 'Sheet1', dirty: false }])
   const [activeTab, setActiveTab] = useState(0)
@@ -46,8 +47,8 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-full w-full overflow-hidden">
-      <RibbonToolbar />
-      <SearchBar />
+      <RibbonToolbar onFocusSearch={() => searchInputRef.current?.focus()} />
+      <SearchBar inputRef={searchInputRef} />
       <iframe
         ref={iframeRef}
         id="editor-frame"

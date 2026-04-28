@@ -1,8 +1,12 @@
-import { useState } from 'react'
+import { type Ref, useState } from 'react'
 import { Search, Replace, Hash, ChevronDown, ChevronUp, X } from 'lucide-react'
 import { send } from '../lib/bridge'
 
-export default function SearchBar() {
+interface Props {
+  inputRef?: Ref<HTMLInputElement>
+}
+
+export default function SearchBar({ inputRef }: Props) {
   const [query, setQuery] = useState('')
   const [replaceText, setReplaceText] = useState('')
   const [showReplace, setShowReplace] = useState(false)
@@ -18,6 +22,7 @@ export default function SearchBar() {
       <div className="flex flex-row items-center bg-gray-100 border border-gray-300 rounded overflow-hidden">
         <Search size={13} className="ml-1.5 text-gray-500 flex-shrink-0" />
         <input
+          ref={inputRef}
           className="bg-transparent outline-none px-1.5 py-0.5 w-44 text-xs"
           placeholder="検索..."
           value={query}
