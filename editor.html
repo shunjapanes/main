@@ -8217,12 +8217,14 @@
           'sortAsc':         function() {
             var col = _ribGetCurCol();
             if (col < 0) { setStatus('ソートする列のセルを選択してください'); return; }
+            if (!Array.isArray(state.sortKeys)) state.sortKeys = [];
             state.sortCol = col; state.sortAsc = false;
             sortByColumn(col);
           },
           'sortDesc':        function() {
             var col = _ribGetCurCol();
             if (col < 0) { setStatus('ソートする列のセルを選択してください'); return; }
+            if (!Array.isArray(state.sortKeys)) state.sortKeys = [];
             state.sortCol = col; state.sortAsc = true;
             sortByColumn(col);
           },
@@ -8267,36 +8269,7 @@
           'moveRowDown':     function() { if (!_ribRequireSel('行を下に移動')) return; moveRowDown(); },
           'duplicateRow':    function() { if (!_ribRequireSel('行を複製')) return; duplicateRow(); },
           'toggleVertHeader':function() { toggleVerticalHeader(); },
-          'toggleWrap':      function() {
-            if (state.range) {
-              toggleWrapCells();
-            } else {
-              // Auto-detect rows with long content and wrap only those
-              var longRows = [];
-              state.data.forEach(function(row, i) {
-                if (row.some(function(cell) {
-                  var s = String(cell == null ? '' : cell);
-                  return s.length > 25 || s.indexOf('\n') >= 0;
-                })) { longRows.push(i); }
-              });
-              if (longRows.length === 0) {
-                toggleWrapCells();
-              } else {
-                var allWrapped = longRows.every(function(i) { return state.wrapRows.has(i); });
-                // Turn off global wrap if it was on
-                if (state.wrapCells) {
-                  state.wrapCells = false;
-                  document.body.classList.remove('wrap-cells');
-                }
-                longRows.forEach(function(i) {
-                  if (allWrapped) state.wrapRows.delete(i); else state.wrapRows.add(i);
-                });
-                state.forceRender = true;
-                renderBody();
-                setStatus(allWrapped ? '折り返しを解除' : longRows.length + '行に折り返しを適用');
-              }
-            }
-          },
+          'toggleWrap':      function() { toggleWrapCells(); },
           'toggleFreeze':    function() {
             if (!_ribRequireSel('列固定')) return;
             toggleFreezeColumn();
@@ -8326,12 +8299,18 @@
           'searchPrev':      function() { moveSearch(-1); },
           'clearSearch':     function() { els.search.value = ''; execSearch(); },
           'replaceOne':      function() {
-            var inp = document.getElementById('replace-input');
-            if (inp && payload !== undefined) { inp.value = payload; replaceOne(); }
+            var repFind = document.getElementById('replace-find');
+            var repWith = document.getElementById('replace-with');
+            if (repFind) repFind.value = (els && els.search) ? els.search.value : '';
+            if (repWith && payload !== undefined) repWith.value = payload;
+            replaceOne();
           },
           'replaceAll':      function() {
-            var inp = document.getElementById('replace-input');
-            if (inp && payload !== undefined) { inp.value = payload; replaceAll(); }
+            var repFind = document.getElementById('replace-find');
+            var repWith = document.getElementById('replace-with');
+            if (repFind) repFind.value = (els && els.search) ? els.search.value : '';
+            if (repWith && payload !== undefined) repWith.value = payload;
+            replaceAll();
           },
         };
 
@@ -8339,6 +8318,18 @@
           try { dispatch[action](); } catch(err) { console.warn('[bridge]', action, err); }
         }
       });
+
+      // ---- Override window.open: route _blank popups through parent to bypass iframe popup block ----
+      (function() {
+        var _origOpen = window.open;
+        window.open = function(url, target, features) {
+          if (target === '_blank' || target === undefined) {
+            window.parent.postMessage({ type: 'popup', url: String(url) }, '*');
+            return null;
+          }
+          return _origOpen.apply(window, arguments);
+        };
+      })();
 
       // ---- Move #recent-menu out of hidden #toolbar so it can show ----
       (function() {
@@ -8351,14 +8342,15 @@
         }
       })();
 
-      // ---- Proxy setStatus → postMessage to parent ----
-      var _origSetStatus = window.setStatus;
-      if (typeof _origSetStatus === 'function') {
-        window.setStatus = function(msg) {
-          _origSetStatus(msg);
-          window.parent.postMessage({ type: 'status', text: msg }, '*');
-        };
-      }
+      // ---- MutationObserver: sync #status-main to parent ----
+      (function() {
+        var statusEl = document.getElementById('status-main');
+        if (statusEl) {
+          new MutationObserver(function() {
+            window.parent.postMessage({ type: 'status', text: statusEl.textContent || '' }, '*');
+          }).observe(statusEl, { childList: true, subtree: true, characterData: true });
+        }
+      })();
 
       // ---- MutationObserver: sync status-pos to parent ----
       (function() {
