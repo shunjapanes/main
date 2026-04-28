@@ -10,7 +10,8 @@ interface Tab {
 }
 
 interface EditorMessage {
-  type: 'status' | 'tabs' | 'position' | 'stats'
+  type: 'status' | 'tabs' | 'position' | 'stats' | 'popup'
+  url?: string | 'popup'
   text?: string
   tabs?: Tab[]
   activeTab?: number
@@ -37,6 +38,7 @@ export default function App() {
       }
       if (msg.type === 'position' && msg.position !== undefined) setPosition(msg.position)
       if (msg.type === 'stats' && msg.stats !== undefined) setStats(msg.stats)
+      if (msg.type === 'popup' && msg.url) window.open(msg.url, '_blank')
     }
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
