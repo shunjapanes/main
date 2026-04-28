@@ -8267,8 +8267,40 @@
           'moveRowDown':     function() { if (!_ribRequireSel('行を下に移動')) return; moveRowDown(); },
           'duplicateRow':    function() { if (!_ribRequireSel('行を複製')) return; duplicateRow(); },
           'toggleVertHeader':function() { toggleVerticalHeader(); },
-          'toggleWrap':      function() { toggleWrapCells(); },
-          'toggleFreeze':    function() { toggleFreezeColumn(); },
+          'toggleWrap':      function() {
+            if (state.range) {
+              toggleWrapCells();
+            } else {
+              // Auto-detect rows with long content and wrap only those
+              var longRows = [];
+              state.data.forEach(function(row, i) {
+                if (row.some(function(cell) {
+                  var s = String(cell == null ? '' : cell);
+                  return s.length > 25 || s.indexOf('\n') >= 0;
+                })) { longRows.push(i); }
+              });
+              if (longRows.length === 0) {
+                toggleWrapCells();
+              } else {
+                var allWrapped = longRows.every(function(i) { return state.wrapRows.has(i); });
+                // Turn off global wrap if it was on
+                if (state.wrapCells) {
+                  state.wrapCells = false;
+                  document.body.classList.remove('wrap-cells');
+                }
+                longRows.forEach(function(i) {
+                  if (allWrapped) state.wrapRows.delete(i); else state.wrapRows.add(i);
+                });
+                state.forceRender = true;
+                renderBody();
+                setStatus(allWrapped ? '折り返しを解除' : longRows.length + '行に折り返しを適用');
+              }
+            }
+          },
+          'toggleFreeze':    function() {
+            if (!_ribRequireSel('列固定')) return;
+            toggleFreezeColumn();
+          },
           'cycleRowHeight':  function() { cycleRowHeight(); },
           'toggleFitText':   function() { toggleFitText(); },
           'toggleCondHL':    function() { toggleConditionalHL(); },
@@ -8328,37 +8360,41 @@
         };
       }
 
-      // ---- Proxy updateStatusPos → postMessage position/stats ----
-      var _origUpdateStatusPos = window.updateStatusPos;
-      if (typeof _origUpdateStatusPos === 'function') {
-        window.updateStatusPos = function() {
-          _origUpdateStatusPos();
-          if (typeof state !== 'undefined') {
-            var r = state.curRow, c = state.curCol;
-            var pos = (r >= 0 && c >= 0) ? ('R' + (r + 1) + ' C' + (c + 1)) : '';
-            window.parent.postMessage({ type: 'position', position: pos }, '*');
-          }
-        };
-      }
+      // ---- MutationObserver: sync status-pos to parent ----
+      (function() {
+        var posEl = document.getElementById('status-pos');
+        if (posEl) {
+          new MutationObserver(function() {
+            window.parent.postMessage({ type: 'position', position: posEl.textContent || '' }, '*');
+          }).observe(posEl, { childList: true, subtree: true, characterData: true });
+        }
+        var statsEl = document.getElementById('status-stats');
+        if (statsEl) {
+          new MutationObserver(function() {
+            window.parent.postMessage({ type: 'stats', stats: statsEl.textContent || '' }, '*');
+          }).observe(statsEl, { childList: true, subtree: true, characterData: true });
+        }
+      })();
 
-      // ---- Proxy renderTabBar → postMessage tab state ----
-      var _origRenderTabBar = window.renderTabBar;
-      if (typeof _origRenderTabBar === 'function') {
-        window.renderTabBar = function() {
-          _origRenderTabBar();
-          if (typeof state !== 'undefined' && Array.isArray(state.tabs)) {
-            var tabData = state.tabs.map(function(t) {
-              return { name: t.name || 'Sheet', dirty: !!t.dirty };
-            });
-            window.parent.postMessage({ type: 'tabs', tabs: tabData, activeTab: state.activeTab }, '*');
-          }
-        };
+      // ---- MutationObserver: sync tab state to parent whenever #tab-bar changes ----
+      function _ribSendTabs() {
+        if (typeof state === 'undefined' || !Array.isArray(state.tabs)) return;
+        var tabData = state.tabs.map(function(t) {
+          return { name: t.fileName || t.name || 'Sheet', dirty: !!t.dirty };
+        });
+        window.parent.postMessage({ type: 'tabs', tabs: tabData, activeTab: state.activeTab }, '*');
       }
+      (function() {
+        var tabBar = document.getElementById('tab-bar');
+        if (tabBar) {
+          new MutationObserver(_ribSendTabs).observe(tabBar, { childList: true, subtree: true, characterData: true });
+        }
+      })();
 
-      // ---- Send initial tab state after load ----
+      // ---- Send initial state after load ----
       window.addEventListener('load', function() {
         setTimeout(function() {
-          if (typeof renderTabBar === 'function') renderTabBar();
+          _ribSendTabs();
           if (typeof setStatus === 'function') setStatus('準備完了');
         }, 300);
       });
