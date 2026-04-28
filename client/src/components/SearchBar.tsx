@@ -1,4 +1,4 @@
-import { type Ref, useState } from 'react'
+import { type Ref, useEffect, useRef, useState } from 'react'
 import { Search, Replace, Hash, ChevronDown, ChevronUp, X } from 'lucide-react'
 import { send } from '../lib/bridge'
 
@@ -11,6 +11,15 @@ export default function SearchBar({ inputRef }: Props) {
   const [replaceText, setReplaceText] = useState('')
   const [showReplace, setShowReplace] = useState(false)
   const [rowNum, setRowNum] = useState('')
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      send('search', query)
+    }, 180)
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [query])
 
   const doGotoRow = () => {
     if (rowNum) send('gotoRow', rowNum)
@@ -29,11 +38,9 @@ export default function SearchBar({ inputRef }: Props) {
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => {
             if (e.key === 'Enter') {
-              if (!query) { send('clearSearch'); return }
-              send('search', query)
               e.shiftKey ? send('searchPrev') : send('searchNext')
             }
-            if (e.key === 'Escape') { setQuery(''); send('clearSearch') }
+            if (e.key === 'Escape') { setQuery('') }
           }}
         />
         {query && (
@@ -43,10 +50,10 @@ export default function SearchBar({ inputRef }: Props) {
         )}
       </div>
 
-      <button className="p-1 rounded hover:bg-gray-100 text-gray-600" onClick={() => { send('search', query); send('searchPrev') }} title="前を検索 (Shift+Enter)">
+      <button className="p-1 rounded hover:bg-gray-100 text-gray-600" onClick={() => send('searchPrev')} title="前を検索 (Shift+Enter)">
         <ChevronUp size={14} />
       </button>
-      <button className="p-1 rounded hover:bg-gray-100 text-gray-600" onClick={() => { send('search', query); send('searchNext') }} title="次を検索 (Enter)">
+      <button className="p-1 rounded hover:bg-gray-100 text-gray-600" onClick={() => send('searchNext')} title="次を検索 (Enter)">
         <ChevronDown size={14} />
       </button>
 
