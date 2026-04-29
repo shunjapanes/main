@@ -8283,7 +8283,12 @@
           'toggleCondHL':    function() { toggleConditionalHL(); },
           'dupHighlight':    function() { openDupHlDialog(); },
           'resetView':       function() { resetView(); },
-          'loadSejMaster':   function() { toggleSejLink(); },
+          'loadSejMaster':   function() {
+            var inp = document.createElement('input');
+            inp.type = 'file'; inp.accept = '.tsv,.txt,text/plain';
+            inp.onchange = function() { if (inp.files && inp.files[0]) loadSejMasterFile(inp.files[0]); };
+            inp.click();
+          },
           'toggleSej':       function() { toggleSejLink(); },
           'htmlPreview':     function() { exportHtmlPreview(); },
           'colStats':        function() {
@@ -8329,17 +8334,6 @@
         }
       });
 
-      // ---- Override window.open: route _blank popups through parent to bypass iframe popup block ----
-      (function() {
-        var _origOpen = window.open;
-        window.open = function(url, target, features) {
-          if (target === '_blank' || target === undefined) {
-            window.parent.postMessage({ type: 'popup', url: String(url) }, '*');
-            return null;
-          }
-          return _origOpen.apply(window, arguments);
-        };
-      })();
 
       // ---- Move #recent-menu out of hidden #toolbar so it can show ----
       (function() {
@@ -8359,6 +8353,16 @@
           new MutationObserver(function() {
             window.parent.postMessage({ type: 'status', text: statusEl.textContent || '' }, '*');
           }).observe(statusEl, { childList: true, subtree: true, characterData: true });
+        }
+      })();
+
+      // ---- MutationObserver: sync #search-count to parent ----
+      (function() {
+        var countEl = document.getElementById('search-count');
+        if (countEl) {
+          new MutationObserver(function() {
+            window.parent.postMessage({ type: 'searchCount', count: countEl.textContent || '' }, '*');
+          }).observe(countEl, { childList: true, subtree: true, characterData: true });
         }
       })();
 

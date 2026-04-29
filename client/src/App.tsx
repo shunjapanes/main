@@ -10,13 +10,13 @@ interface Tab {
 }
 
 interface EditorMessage {
-  type: 'status' | 'tabs' | 'position' | 'stats' | 'popup'
-  url?: string
+  type: 'status' | 'tabs' | 'position' | 'stats' | 'searchCount'
   text?: string
   tabs?: Tab[]
   activeTab?: number
   position?: string
   stats?: string
+  count?: string
 }
 
 export default function App() {
@@ -27,6 +27,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState(0)
   const [position, setPosition] = useState('')
   const [stats, setStats] = useState('')
+  const [searchCount, setSearchCount] = useState('')
 
   useEffect(() => {
     const handler = (e: MessageEvent<EditorMessage>) => {
@@ -39,7 +40,7 @@ export default function App() {
       }
       if (msg.type === 'position' && msg.position !== undefined) setPosition(msg.position)
       if (msg.type === 'stats' && msg.stats !== undefined) setStats(msg.stats)
-      if (msg.type === 'popup' && msg.url) window.open(msg.url, '_blank')
+      if (msg.type === 'searchCount' && msg.count !== undefined) setSearchCount(msg.count)
     }
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
@@ -48,7 +49,7 @@ export default function App() {
   return (
     <div className="flex flex-col h-full w-full overflow-hidden">
       <RibbonToolbar onFocusSearch={() => searchInputRef.current?.focus()} />
-      <SearchBar inputRef={searchInputRef} />
+      <SearchBar inputRef={searchInputRef} searchCount={searchCount} />
       <iframe
         ref={iframeRef}
         id="editor-frame"

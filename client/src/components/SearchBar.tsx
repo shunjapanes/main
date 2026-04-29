@@ -4,9 +4,10 @@ import { send } from '../lib/bridge'
 
 interface Props {
   inputRef?: Ref<HTMLInputElement>
+  searchCount?: string
 }
 
-export default function SearchBar({ inputRef }: Props) {
+export default function SearchBar({ inputRef, searchCount }: Props) {
   const [query, setQuery] = useState('')
   const [replaceText, setReplaceText] = useState('')
   const [showReplace, setShowReplace] = useState(false)
@@ -43,6 +44,7 @@ export default function SearchBar({ inputRef }: Props) {
             if (e.key === 'Escape') { setQuery('') }
           }}
         />
+        {searchCount && <span className="mx-1 text-gray-500 text-[10px] whitespace-nowrap">{searchCount}</span>}
         {query && (
           <button className="mr-1 text-gray-400 hover:text-gray-600" onClick={() => { setQuery(''); send('clearSearch') }}>
             <X size={12} />
