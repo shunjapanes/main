@@ -17,9 +17,10 @@ type Tab = typeof TABS[number]
 
 interface Props {
   onFocusSearch?: () => void
+  onOpenFile?: () => void
 }
 
-export default function RibbonToolbar({ onFocusSearch }: Props) {
+export default function RibbonToolbar({ onFocusSearch, onOpenFile }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('ホーム')
 
   return (
@@ -43,7 +44,7 @@ export default function RibbonToolbar({ onFocusSearch }: Props) {
 
       {/* Ribbon content */}
       <div className="flex flex-row items-stretch h-[72px] gap-0 overflow-x-auto overflow-y-hidden">
-        {activeTab === 'ファイル' && <FileTab />}
+        {activeTab === 'ファイル' && <FileTab onOpenFile={onOpenFile} />}
         {activeTab === 'ホーム' && <HomeTab onFocusSearch={onFocusSearch} />}
         {activeTab === 'データ' && <DataTab />}
         {activeTab === '表示' && <ViewTab />}
@@ -57,12 +58,12 @@ function Divider() {
   return <div className="w-px bg-gray-300 self-stretch my-1 mx-0.5 flex-shrink-0" />
 }
 
-function FileTab() {
+function FileTab({ onOpenFile }: { onOpenFile?: () => void }) {
   return (
     <>
       <RibbonGroup label="新規・開く">
         <RibbonButton icon={FilePlus} label="新規" onClick={() => send('new')} />
-        <RibbonButton icon={FolderOpen} label="開く" onClick={() => send('open')} />
+        <RibbonButton icon={FolderOpen} label="開く" onClick={() => onOpenFile ? onOpenFile() : send('open')} />
         <RibbonButton icon={PlusSquare} label="シート追加" onClick={() => send('addSheet')} />
       </RibbonGroup>
       <Divider />

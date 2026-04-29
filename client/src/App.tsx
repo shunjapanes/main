@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import RibbonToolbar from './components/RibbonToolbar'
 import SearchBar from './components/SearchBar'
 import FileTabBar from './components/FileTabBar'
 import StatusBar from './components/StatusBar'
+import { send } from './lib/bridge'
 
 interface Tab {
   name: string
@@ -22,6 +23,7 @@ interface EditorMessage {
 export default function App() {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [status, setStatus] = useState('準備完了')
   const [tabs, setTabs] = useState<Tab[]>([{ name: 'Sheet1', dirty: false }])
   const [activeTab, setActiveTab] = useState(0)
@@ -49,9 +51,35 @@ export default function App() {
     return () => window.removeEventListener('message', handler)
   }, [])
 
+  const handleFileSelected = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const content = ev.target?.result as string
+      if (content != null) send('openContent', { content, filename: file.name })
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }, [])
+
+  const handleOpenFile = useCallback(() => {
+    fileInputRef.current?.click()
+  }, [])
+
   return (
     <div className="flex flex-col h-full w-full overflow-hidden">
-      <RibbonToolbar onFocusSearch={() => searchInputRef.current?.focus()} />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".tsv,.csv,.txt,text/plain"
+        style={{ display: 'none' }}
+        onChange={handleFileSelected}
+      />
+      <RibbonToolbar
+        onFocusSearch={() => searchInputRef.current?.focus()}
+        onOpenFile={handleOpenFile}
+      />
       <SearchBar
         inputRef={searchInputRef}
         searchCount={searchCount}
