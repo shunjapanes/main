@@ -8397,6 +8397,16 @@
         }
       })();
 
+      // ---- Redirect Ctrl+F to parent SearchBar ----
+      document.addEventListener('keydown', function(e) {
+        var cmd = e.ctrlKey || e.metaKey;
+        if (cmd && !e.shiftKey && !e.altKey && (e.key === 'f' || e.key === 'F')) {
+          e.preventDefault();
+          e.stopPropagation();
+          window.parent.postMessage({ type: 'focusSearch' }, '*');
+        }
+      }, true);
+
       // ---- Send initial state after load ----
       window.addEventListener('load', function() {
         setTimeout(function() {
