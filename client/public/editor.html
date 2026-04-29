@@ -8383,7 +8383,9 @@
         var statusEl = document.getElementById('status-main');
         if (statusEl) {
           new MutationObserver(function() {
-            window.parent.postMessage({ type: 'status', text: statusEl.textContent || '' }, '*');
+            var txt = statusEl.textContent || '';
+            if (txt === 'Ready') txt = '準備完了';
+            window.parent.postMessage({ type: 'status', text: txt }, '*');
           }).observe(statusEl, { childList: true, subtree: true, characterData: true });
         }
       })();

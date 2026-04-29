@@ -42,7 +42,7 @@ export default function SearchBar({ inputRef, searchCount, searchQuery: external
   }
 
   return (
-    <div className="flex flex-row items-center gap-1 px-2 py-1 bg-white border-b border-gray-200 text-xs" style={{ flexShrink: 0 }}>
+    <div className="flex flex-row items-center gap-1 px-2 py-1 bg-white border-b border-gray-200 text-xs overflow-x-auto overflow-y-hidden" style={{ flexShrink: 0 }}>
       {/* Search */}
       <div className="flex flex-row items-center bg-gray-100 border border-gray-300 rounded overflow-hidden">
         <Search size={13} className="ml-1.5 text-gray-500 flex-shrink-0" />
