@@ -21,7 +21,6 @@ interface EditorMessage {
 }
 
 export default function App() {
-  const iframeRef = useRef<HTMLIFrameElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [status, setStatus] = useState('準備完了')
@@ -87,7 +86,6 @@ export default function App() {
         onSearchQueryChange={setSearchQuery}
       />
       <iframe
-        ref={iframeRef}
         id="editor-frame"
         src={`${import.meta.env.BASE_URL}editor.html`}
         className="flex-1 w-full border-none"
