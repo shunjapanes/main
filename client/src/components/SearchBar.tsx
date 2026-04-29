@@ -78,8 +78,14 @@ export default function SearchBar({ inputRef }: Props) {
               onChange={e => setReplaceText(e.target.value)}
             />
           </div>
-          <button className="px-2 py-0.5 rounded bg-gray-200 hover:bg-gray-300 text-xs" onClick={() => send('replaceOne', replaceText)}>1件</button>
-          <button className="px-2 py-0.5 rounded bg-gray-200 hover:bg-gray-300 text-xs" onClick={() => send('replaceAll', replaceText)}>全て</button>
+          <button className="px-2 py-0.5 rounded bg-gray-200 hover:bg-gray-300 text-xs" onClick={() => {
+            send('search', query)
+            setTimeout(() => send('replaceOne', replaceText), 20)
+          }}>1件</button>
+          <button className="px-2 py-0.5 rounded bg-gray-200 hover:bg-gray-300 text-xs" onClick={() => {
+            send('search', query)
+            setTimeout(() => send('replaceAll', replaceText), 20)
+          }}>全て</button>
         </>
       )}
 
