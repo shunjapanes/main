@@ -99,13 +99,13 @@ function HomeTab({ onFocusSearch }: { onFocusSearch?: () => void }) {
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="フィルター・並べ替え">
-        <RibbonButton icon={Filter} label="フィルター" onClick={() => send('toggleFilter')} title="フィルター切替 (Ctrl+Shift+F)" />
+        <RibbonButton icon={Filter} label="フィルター" onClick={() => send('toggleFilter')} title="フィルター行の表示切替" />
         <RibbonButton icon={ArrowUpAZ} label="昇順" onClick={() => send('sortAsc')} title="昇順ソート" />
         <RibbonButton icon={ArrowDownAZ} label="降順" onClick={() => send('sortDesc')} title="降順ソート" />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="セル">
-        <RibbonButton icon={ALargeSmall} label="列幅自動調整" onClick={() => send('autoFit')} title="全列幅を自動調整 (Ctrl+Shift+U)" />
+        <RibbonButton icon={ALargeSmall} label="列幅自動調整" onClick={() => send('autoFit')} title="全列幅を自動調整" />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="検索">
@@ -120,7 +120,7 @@ function DataTab() {
     <>
       <RibbonGroup label="行の挿入">
         <RibbonButton icon={ArrowUpFromLine} label="上に行挿入" onClick={() => send('insertRowAbove')} title="上に行を挿入 (Alt+Shift+↑)" />
-        <RibbonButton icon={ArrowDownToLine} label="下に行挿入" onClick={() => send('insertRowBelow')} title="下に行を挿入 (Alt+Shift+↓)" />
+        <RibbonButton icon={ArrowDownToLine} label="下に行挿入" onClick={() => send('insertRowBelow')} title="下に行を挿入 (Ctrl+Enter)" />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="列の挿入">
@@ -136,9 +136,9 @@ function DataTab() {
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="行の操作">
-        <RibbonButton icon={MoveUp} label="行を上に移動" onClick={() => send('moveRowUp')} title="行を上に移動 (Ctrl+Shift+H)" />
-        <RibbonButton icon={MoveDown} label="行を下に移動" onClick={() => send('moveRowDown')} title="行を下に移動 (Ctrl+Alt+H)" />
-        <RibbonButton icon={CopyPlus} label="行を複製" onClick={() => send('duplicateRow')} title="行を複製" />
+        <RibbonButton icon={MoveUp} label="行を上に移動" onClick={() => send('moveRowUp')} title="行を上に移動 (Alt+↑)" />
+        <RibbonButton icon={MoveDown} label="行を下に移動" onClick={() => send('moveRowDown')} title="行を下に移動 (Alt+↓)" />
+        <RibbonButton icon={CopyPlus} label="行を複製" onClick={() => send('duplicateRow')} title="行を複製 (Ctrl+Shift+D)" />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="整形">
@@ -154,7 +154,7 @@ function ViewTab() {
       <RibbonGroup label="表示設定">
         <RibbonButton icon={AlignVerticalJustifyCenter} label="縦ヘッダー" onClick={() => send('toggleVertHeader')} title="縦書きヘッダー切替" />
         <RibbonButton icon={WrapText} label="セル折り返し" onClick={() => send('toggleWrap')} title="セル内折り返し切替" />
-        <RibbonButton icon={PanelLeft} label="列固定" onClick={() => send('toggleFreeze')} title="選択列を固定" />
+        <RibbonButton icon={PanelLeft} label="列固定" onClick={() => send('toggleFreeze')} title="選択列を固定 (Ctrl+Shift+F)" />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="行・列サイズ">
