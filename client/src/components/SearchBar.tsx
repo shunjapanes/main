@@ -5,14 +5,24 @@ import { send } from '../lib/bridge'
 interface Props {
   inputRef?: Ref<HTMLInputElement>
   searchCount?: string
+  searchQuery?: string
+  onSearchQueryChange?: (q: string) => void
 }
 
-export default function SearchBar({ inputRef, searchCount }: Props) {
-  const [query, setQuery] = useState('')
+export default function SearchBar({ inputRef, searchCount, searchQuery: externalQuery, onSearchQueryChange }: Props) {
+  const [query, setQuery] = useState(externalQuery ?? '')
   const [replaceText, setReplaceText] = useState('')
   const [showReplace, setShowReplace] = useState(false)
   const [rowNum, setRowNum] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Sync when parent clears the query externally
+  useEffect(() => {
+    if (externalQuery !== undefined && externalQuery !== query) {
+      setQuery(externalQuery)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalQuery])
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -21,6 +31,11 @@ export default function SearchBar({ inputRef, searchCount }: Props) {
     }, 180)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [query])
+
+  const handleQueryChange = (val: string) => {
+    setQuery(val)
+    onSearchQueryChange?.(val)
+  }
 
   const doGotoRow = () => {
     if (rowNum) send('gotoRow', rowNum)
@@ -36,17 +51,17 @@ export default function SearchBar({ inputRef, searchCount }: Props) {
           className="bg-transparent outline-none px-1.5 py-0.5 w-44 text-xs"
           placeholder="検索..."
           value={query}
-          onChange={e => setQuery(e.target.value)}
+          onChange={e => handleQueryChange(e.target.value)}
           onKeyDown={e => {
             if (e.key === 'Enter') {
               e.shiftKey ? send('searchPrev') : send('searchNext')
             }
-            if (e.key === 'Escape') { setQuery('') }
+            if (e.key === 'Escape') { handleQueryChange(''); send('clearSearch') }
           }}
         />
         {searchCount && <span className="mx-1 text-gray-500 text-[10px] whitespace-nowrap">{searchCount}</span>}
         {query && (
-          <button className="mr-1 text-gray-400 hover:text-gray-600" onClick={() => { setQuery(''); send('clearSearch') }}>
+          <button className="mr-1 text-gray-400 hover:text-gray-600" onClick={() => { handleQueryChange(''); send('clearSearch') }}>
             <X size={12} />
           </button>
         )}
