@@ -8200,27 +8200,31 @@
           'open':            function() { if (els && els.fileInput) els.fileInput.click(); },
           'openContent':     function() {
             if (!payload || typeof payload.content !== 'string') return;
-            var fakeFile = { name: payload.filename || 'data.tsv' };
+            var fname = payload.filename || 'data.tsv';
             saveCurrentTab();
-            state.fileName = fakeFile.name;
-            state.delimiter = detectDelimiter(payload.content, fakeFile.name);
+            state.fileName = fname;
+            state.delimiter = detectDelimiter(payload.content, fname);
             parseData(payload.content);
             clearAutoDropColumns(); applyHeaderMapping();
             var tab = {
-              fileName: state.fileName, headers: state.headers, data: state.data,
+              fileName: fname, headers: state.headers, data: state.data,
               delimiter: state.delimiter, colWidths: {}, sortCol: -1, sortAsc: true,
-              sortKeys: [], headerMode: state.headerMode, dirty: false
+              sortKeys: [], headerMode: state.headerMode, dirty: false,
+              _rawText: payload.content
             };
-            state.tabs.push(tab); state.activeTab = state.tabs.length - 1;
-            resetState();
-            state.fileName = tab.fileName; state.headers = tab.headers; state.data = tab.data;
-            state.delimiter = tab.delimiter; state.headerMode = tab.headerMode;
-            applyFilters(); renderHeader(); state.forceRender = true; renderBody();
-            markClean(); autoFitAllColumnsQuiet();
-            els.container.style.display = 'block';
-            if (els.dropZone) els.dropZone.classList.add('hidden');
+            var cur = state.tabs[state.activeTab];
+            if (cur && cur._isBlankSheet === true && !cur.dirty) {
+              state.tabs[state.activeTab] = tab;
+            } else {
+              state.tabs.push(tab);
+              state.activeTab = state.tabs.length - 1;
+            }
+            autoFitAllColumnsQuiet();
+            state.tabs[state.activeTab].colWidths = Object.assign({}, state.colWidths);
+            renderHeader(); state.forceRender = true; renderBody();
+            showTable(); markClean();
             setTimeout(_ribSendTabs, 100);
-            setStatus('ファイルを読み込みました: ' + fakeFile.name + ' (' + state.data.length + '行)');
+            setStatus('ロード完了: ' + state.data.length + '行 × ' + state.headers.length + '列');
           },
           'save':            function() { saveFile(); },
           'saveAs':          function() { saveFile(); },
