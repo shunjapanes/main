@@ -8224,6 +8224,7 @@
               state.tabs[state.activeTab].colWidths = Object.assign({}, state.colWidths);
               renderHeader(); state.forceRender = true; renderBody();
               showTable(); markClean();
+              if (typeof addRecentFile === 'function') addRecentFile(fname, '');
               setTimeout(_ribSendTabs, 100);
               setStatus('ロード完了: ' + state.data.length + '行 × ' + state.headers.length + '列');
             };
@@ -8362,6 +8363,10 @@
           if (action === 'closeTab' || action === 'new' || action === 'addSheet' ||
               action === 'switchTab' || action === 'save' || action === 'open') {
             setTimeout(_ribSendTabs, 100);
+          }
+          // Sync toggle states after tab switch / new sheet (view state resets)
+          if (action === 'switchTab' || action === 'new' || action === 'addSheet' || action === 'openContent') {
+            setTimeout(_ribSyncToggles, 120);
           }
         }
       });
