@@ -53,10 +53,12 @@ export default function SearchBar({ inputRef, searchCount, searchQuery: external
           value={query}
           onChange={e => handleQueryChange(e.target.value)}
           onKeyDown={e => {
+            const cmd = e.ctrlKey || e.metaKey
             if (e.key === 'Enter') {
               e.shiftKey ? send('searchPrev') : send('searchNext')
             }
             if (e.key === 'Escape') { handleQueryChange(''); send('clearSearch') }
+            if (cmd && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); (e.target as HTMLInputElement).select() }
           }}
         />
         {searchCount && <span className="mx-1 text-gray-500 text-[10px] whitespace-nowrap">{searchCount}</span>}
