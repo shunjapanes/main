@@ -8201,30 +8201,34 @@
           'openContent':     function() {
             if (!payload || typeof payload.content !== 'string') return;
             var fname = payload.filename || 'data.tsv';
-            saveCurrentTab();
-            state.fileName = fname;
-            state.delimiter = detectDelimiter(payload.content, fname);
-            parseData(payload.content);
-            clearAutoDropColumns(); applyHeaderMapping();
-            var tab = {
-              fileName: fname, headers: state.headers, data: state.data,
-              delimiter: state.delimiter, colWidths: {}, sortCol: -1, sortAsc: true,
-              sortKeys: [], headerMode: state.headerMode, dirty: false,
-              _rawText: payload.content
+            var doLoad = function() {
+              saveCurrentTab();
+              state.fileName = fname;
+              state.delimiter = detectDelimiter(payload.content, fname);
+              parseData(payload.content);
+              clearAutoDropColumns(); applyHeaderMapping();
+              var tab = {
+                fileName: fname, headers: state.headers, data: state.data,
+                delimiter: state.delimiter, colWidths: {}, sortCol: -1, sortAsc: true,
+                sortKeys: [], headerMode: state.headerMode, dirty: false,
+                _rawText: payload.content
+              };
+              var cur = state.tabs[state.activeTab];
+              if (cur && cur._isBlankSheet === true && !cur.dirty) {
+                state.tabs[state.activeTab] = tab;
+              } else {
+                state.tabs.push(tab);
+                state.activeTab = state.tabs.length - 1;
+              }
+              autoFitAllColumnsQuiet();
+              state.tabs[state.activeTab].colWidths = Object.assign({}, state.colWidths);
+              renderHeader(); state.forceRender = true; renderBody();
+              showTable(); markClean();
+              setTimeout(_ribSendTabs, 100);
+              setStatus('ロード完了: ' + state.data.length + '行 × ' + state.headers.length + '列');
             };
-            var cur = state.tabs[state.activeTab];
-            if (cur && cur._isBlankSheet === true && !cur.dirty) {
-              state.tabs[state.activeTab] = tab;
-            } else {
-              state.tabs.push(tab);
-              state.activeTab = state.tabs.length - 1;
-            }
-            autoFitAllColumnsQuiet();
-            state.tabs[state.activeTab].colWidths = Object.assign({}, state.colWidths);
-            renderHeader(); state.forceRender = true; renderBody();
-            showTable(); markClean();
-            setTimeout(_ribSendTabs, 100);
-            setStatus('ロード完了: ' + state.data.length + '行 × ' + state.headers.length + '列');
+            if (state.dirty) showReloadDialog(doLoad);
+            else doLoad();
           },
           'save':            function() { saveFile(); },
           'saveAs':          function() { saveFile(); },
