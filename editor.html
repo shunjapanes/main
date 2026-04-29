@@ -8198,6 +8198,30 @@
         var dispatch = {
           'new':             function() { addNewSheet(); },
           'open':            function() { if (els && els.fileInput) els.fileInput.click(); },
+          'openContent':     function() {
+            if (!payload || typeof payload.content !== 'string') return;
+            var fakeFile = { name: payload.filename || 'data.tsv' };
+            saveCurrentTab();
+            state.fileName = fakeFile.name;
+            state.delimiter = detectDelimiter(payload.content, fakeFile.name);
+            parseData(payload.content);
+            clearAutoDropColumns(); applyHeaderMapping();
+            var tab = {
+              fileName: state.fileName, headers: state.headers, data: state.data,
+              delimiter: state.delimiter, colWidths: {}, sortCol: -1, sortAsc: true,
+              sortKeys: [], headerMode: state.headerMode, dirty: false
+            };
+            state.tabs.push(tab); state.activeTab = state.tabs.length - 1;
+            resetState();
+            state.fileName = tab.fileName; state.headers = tab.headers; state.data = tab.data;
+            state.delimiter = tab.delimiter; state.headerMode = tab.headerMode;
+            applyFilters(); renderHeader(); state.forceRender = true; renderBody();
+            markClean(); autoFitAllColumnsQuiet();
+            els.container.style.display = 'block';
+            if (els.dropZone) els.dropZone.classList.add('hidden');
+            setTimeout(_ribSendTabs, 100);
+            setStatus('ファイルを読み込みました: ' + fakeFile.name + ' (' + state.data.length + '行)');
+          },
           'save':            function() { saveFile(); },
           'saveAs':          function() { saveFile(); },
           'exportTsv':       function() { _ribExport('tsv'); },
