@@ -8282,7 +8282,7 @@
           'toggleFitText':   function() { toggleFitText(); },
           'toggleCondHL':    function() { toggleConditionalHL(); },
           'dupHighlight':    function() { openDupHlDialog(); },
-          'resetView':       function() { resetView(); },
+          'resetView':       function() { resetView(); window.parent.postMessage({ type: 'clearSearch' }, '*'); },
           'loadSejMaster':   function() {
             var inp = document.createElement('input');
             inp.type = 'file'; inp.accept = '.tsv,.txt,text/plain';
@@ -8307,7 +8307,7 @@
           },
           'searchNext':      function() { moveSearch(1); },
           'searchPrev':      function() { moveSearch(-1); },
-          'clearSearch':     function() { els.search.value = ''; execSearch(); },
+          'clearSearch':     function() { els.search.value = ''; execSearch(); window.parent.postMessage({ type: 'clearSearch' }, '*'); },
           'replaceOne':      function() {
             var repFind = document.getElementById('replace-find');
             var repWith = document.getElementById('replace-with');
