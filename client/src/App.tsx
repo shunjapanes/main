@@ -10,7 +10,7 @@ interface Tab {
 }
 
 interface EditorMessage {
-  type: 'status' | 'tabs' | 'position' | 'stats' | 'searchCount' | 'clearSearch'
+  type: 'status' | 'tabs' | 'position' | 'stats' | 'searchCount' | 'clearSearch' | 'focusSearch'
   text?: string
   tabs?: Tab[]
   activeTab?: number
@@ -43,6 +43,7 @@ export default function App() {
       if (msg.type === 'stats' && msg.stats !== undefined) setStats(msg.stats)
       if (msg.type === 'searchCount' && msg.count !== undefined) setSearchCount(msg.count)
       if (msg.type === 'clearSearch') { setSearchQuery(''); setSearchCount('') }
+      if (msg.type === 'focusSearch') searchInputRef.current?.focus()
     }
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
