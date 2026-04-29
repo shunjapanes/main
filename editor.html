@@ -8242,7 +8242,7 @@
           'cut':             function() { cutToClipboard(); },
           'copy':            function() { copyToClipboard(); },
           'paste':           function() { pasteFromClipboard(); },
-          'toggleFilter':    function() { toggleFilter(); },
+          'toggleFilter':    function() { toggleFilter(); _ribSyncToggles(); },
           'sortAsc':         function() {
             var col = _ribGetCurCol();
             if (col < 0) { setStatus('ソートする列のセルを選択してください'); return; }
@@ -8304,17 +8304,17 @@
           'moveRowUp':       function() { if (!_ribRequireSel('行を上に移動')) return; moveRowUp(); },
           'moveRowDown':     function() { if (!_ribRequireSel('行を下に移動')) return; moveRowDown(); },
           'duplicateRow':    function() { if (!_ribRequireSel('行を複製')) return; duplicateRow(); },
-          'toggleVertHeader':function() { toggleVerticalHeader(); },
-          'toggleWrap':      function() { toggleWrapCells(); },
+          'toggleVertHeader':function() { toggleVerticalHeader(); _ribSyncToggles(); },
+          'toggleWrap':      function() { toggleWrapCells(); _ribSyncToggles(); },
           'toggleFreeze':    function() {
             if (!_ribRequireSel('列固定')) return;
-            toggleFreezeColumn();
+            toggleFreezeColumn(); _ribSyncToggles();
           },
           'cycleRowHeight':  function() { cycleRowHeight(); },
-          'toggleFitText':   function() { toggleFitText(); },
-          'toggleCondHL':    function() { toggleConditionalHL(); },
+          'toggleFitText':   function() { toggleFitText(); _ribSyncToggles(); },
+          'toggleCondHL':    function() { toggleConditionalHL(); _ribSyncToggles(); },
           'dupHighlight':    function() { openDupHlDialog(); },
-          'resetView':       function() { resetView(); window.parent.postMessage({ type: 'clearSearch' }, '*'); },
+          'resetView':       function() { resetView(); window.parent.postMessage({ type: 'clearSearch' }, '*'); _ribSyncToggles(); },
           'loadSejMaster':   function() {
             var inp = document.createElement('input');
             inp.type = 'file'; inp.accept = '.tsv,.txt,text/plain';
@@ -8424,6 +8424,18 @@
         });
         window.parent.postMessage({ type: 'tabs', tabs: tabData, activeTab: state.activeTab }, '*');
       }
+      function _ribSyncToggles() {
+        if (typeof state === 'undefined') return;
+        window.parent.postMessage({
+          type: 'stateSync',
+          filterActive: !!(state.filterVisible),
+          wrapActive: !!(state.wrapCells),
+          verticalHeaderActive: !!(state.verticalHeader),
+          condHLActive: !!(state.conditionalHL),
+          fitTextActive: !!(state.fitText),
+          freezeActive: !!(state.freezeCols > 0),
+        }, '*');
+      }
       (function() {
         var tabBar = document.getElementById('tab-bar');
         if (tabBar) {
@@ -8445,6 +8457,7 @@
       window.addEventListener('load', function() {
         setTimeout(function() {
           _ribSendTabs();
+          _ribSyncToggles();
           if (typeof setStatus === 'function') setStatus('準備完了');
         }, 300);
       });
