@@ -10,14 +10,38 @@ interface Tab {
   dirty: boolean
 }
 
+export interface ToggleStates {
+  filterActive: boolean
+  wrapActive: boolean
+  verticalHeaderActive: boolean
+  condHLActive: boolean
+  fitTextActive: boolean
+  freezeActive: boolean
+}
+
 interface EditorMessage {
-  type: 'status' | 'tabs' | 'position' | 'stats' | 'searchCount' | 'clearSearch' | 'focusSearch'
+  type: 'status' | 'tabs' | 'position' | 'stats' | 'searchCount' | 'clearSearch' | 'focusSearch' | 'stateSync'
   text?: string
   tabs?: Tab[]
   activeTab?: number
   position?: string
   stats?: string
   count?: string
+  filterActive?: boolean
+  wrapActive?: boolean
+  verticalHeaderActive?: boolean
+  condHLActive?: boolean
+  fitTextActive?: boolean
+  freezeActive?: boolean
+}
+
+const DEFAULT_TOGGLES: ToggleStates = {
+  filterActive: false,
+  wrapActive: false,
+  verticalHeaderActive: true,
+  condHLActive: false,
+  fitTextActive: false,
+  freezeActive: false,
 }
 
 export default function App() {
@@ -30,6 +54,7 @@ export default function App() {
   const [stats, setStats] = useState('')
   const [searchCount, setSearchCount] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [toggles, setToggles] = useState<ToggleStates>(DEFAULT_TOGGLES)
 
   useEffect(() => {
     const handler = (e: MessageEvent<EditorMessage>) => {
@@ -45,6 +70,16 @@ export default function App() {
       if (msg.type === 'searchCount' && msg.count !== undefined) setSearchCount(msg.count)
       if (msg.type === 'clearSearch') { setSearchQuery(''); setSearchCount('') }
       if (msg.type === 'focusSearch') searchInputRef.current?.focus()
+      if (msg.type === 'stateSync') {
+        setToggles({
+          filterActive: !!(msg.filterActive),
+          wrapActive: !!(msg.wrapActive),
+          verticalHeaderActive: !!(msg.verticalHeaderActive),
+          condHLActive: !!(msg.condHLActive),
+          fitTextActive: !!(msg.fitTextActive),
+          freezeActive: !!(msg.freezeActive),
+        })
+      }
     }
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
@@ -78,6 +113,7 @@ export default function App() {
       <RibbonToolbar
         onFocusSearch={() => searchInputRef.current?.focus()}
         onOpenFile={handleOpenFile}
+        toggleStates={toggles}
       />
       <SearchBar
         inputRef={searchInputRef}

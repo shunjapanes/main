@@ -11,6 +11,7 @@ import {
 import RibbonGroup from './RibbonGroup'
 import RibbonButton from './RibbonButton'
 import { send } from '../lib/bridge'
+import type { ToggleStates } from '../App'
 
 const TABS = ['ファイル', 'ホーム', 'データ', '表示', 'ツール'] as const
 type Tab = typeof TABS[number]
@@ -18,9 +19,10 @@ type Tab = typeof TABS[number]
 interface Props {
   onFocusSearch?: () => void
   onOpenFile?: () => void
+  toggleStates?: ToggleStates
 }
 
-export default function RibbonToolbar({ onFocusSearch, onOpenFile }: Props) {
+export default function RibbonToolbar({ onFocusSearch, onOpenFile, toggleStates }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('ホーム')
 
   return (
@@ -45,9 +47,9 @@ export default function RibbonToolbar({ onFocusSearch, onOpenFile }: Props) {
       {/* Ribbon content */}
       <div className="flex flex-row items-stretch h-[72px] gap-0 overflow-x-auto overflow-y-hidden">
         {activeTab === 'ファイル' && <FileTab onOpenFile={onOpenFile} />}
-        {activeTab === 'ホーム' && <HomeTab onFocusSearch={onFocusSearch} />}
+        {activeTab === 'ホーム' && <HomeTab onFocusSearch={onFocusSearch} toggleStates={toggleStates} />}
         {activeTab === 'データ' && <DataTab />}
-        {activeTab === '表示' && <ViewTab />}
+        {activeTab === '表示' && <ViewTab toggleStates={toggleStates} />}
         {activeTab === 'ツール' && <ToolsTab />}
       </div>
     </div>
@@ -85,7 +87,7 @@ function FileTab({ onOpenFile }: { onOpenFile?: () => void }) {
   )
 }
 
-function HomeTab({ onFocusSearch }: { onFocusSearch?: () => void }) {
+function HomeTab({ onFocusSearch, toggleStates }: { onFocusSearch?: () => void; toggleStates?: ToggleStates }) {
   return (
     <>
       <RibbonGroup label="元に戻す">
@@ -100,7 +102,7 @@ function HomeTab({ onFocusSearch }: { onFocusSearch?: () => void }) {
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="フィルター・並べ替え">
-        <RibbonButton icon={Filter} label="フィルター" onClick={() => send('toggleFilter')} title="フィルター行の表示切替" />
+        <RibbonButton icon={Filter} label="フィルター" onClick={() => send('toggleFilter')} title="フィルター行の表示切替" active={toggleStates?.filterActive} />
         <RibbonButton icon={ArrowUpAZ} label="昇順" onClick={() => send('sortAsc')} title="昇順ソート" />
         <RibbonButton icon={ArrowDownAZ} label="降順" onClick={() => send('sortDesc')} title="降順ソート" />
       </RibbonGroup>
@@ -149,22 +151,22 @@ function DataTab() {
   )
 }
 
-function ViewTab() {
+function ViewTab({ toggleStates }: { toggleStates?: ToggleStates }) {
   return (
     <>
       <RibbonGroup label="表示設定">
-        <RibbonButton icon={AlignVerticalJustifyCenter} label="縦ヘッダー" onClick={() => send('toggleVertHeader')} title="縦書きヘッダー切替" />
-        <RibbonButton icon={WrapText} label="セル折り返し" onClick={() => send('toggleWrap')} title="セル内折り返し切替" />
-        <RibbonButton icon={PanelLeft} label="列固定" onClick={() => send('toggleFreeze')} title="選択列を固定 (Ctrl+Shift+F)" />
+        <RibbonButton icon={AlignVerticalJustifyCenter} label="縦ヘッダー" onClick={() => send('toggleVertHeader')} title="縦書きヘッダー切替" active={toggleStates?.verticalHeaderActive} />
+        <RibbonButton icon={WrapText} label="セル折り返し" onClick={() => send('toggleWrap')} title="セル内折り返し切替" active={toggleStates?.wrapActive} />
+        <RibbonButton icon={PanelLeft} label="列固定" onClick={() => send('toggleFreeze')} title="選択列を固定 (Ctrl+Shift+F)" active={toggleStates?.freezeActive} />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="行・列サイズ">
         <RibbonButton icon={Shrink} label="行高さ変更" onClick={() => send('cycleRowHeight')} title="行の高さを切替" />
-        <RibbonButton icon={ALargeSmall} label="テキスト縮小" onClick={() => send('toggleFitText')} title="テキストを列幅に合わせて縮小" />
+        <RibbonButton icon={ALargeSmall} label="テキスト縮小" onClick={() => send('toggleFitText')} title="テキストを列幅に合わせて縮小" active={toggleStates?.fitTextActive} />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="強調">
-        <RibbonButton icon={Highlighter} label="条件付き強調" onClick={() => send('toggleCondHL')} title="条件付きハイライト切替" />
+        <RibbonButton icon={Highlighter} label="条件付き強調" onClick={() => send('toggleCondHL')} title="条件付きハイライト切替" active={toggleStates?.condHLActive} />
         <RibbonButton icon={Layers} label="重複強調" onClick={() => send('dupHighlight')} title="重複行を強調表示" />
       </RibbonGroup>
       <Divider />
