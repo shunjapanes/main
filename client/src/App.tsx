@@ -24,7 +24,7 @@ export default function App() {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [status, setStatus] = useState('準備完了')
-  const [tabs, setTabs] = useState<Tab[]>([{ name: 'Sheet1', dirty: false }])
+  const [tabs, setTabs] = useState<Tab[]>([])
   const [activeTab, setActiveTab] = useState(0)
   const [position, setPosition] = useState('')
   const [stats, setStats] = useState('')
