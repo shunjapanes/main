@@ -1,4 +1,5 @@
 import { type LucideIcon } from 'lucide-react'
+import { focusEditor } from '../lib/bridge'
 
 interface Props {
   icon: LucideIcon
@@ -24,7 +25,7 @@ export default function RibbonButton({ icon: Icon, label, onClick, disabled, act
   return (
     <button
       className={`${base} ${sizeClass} ${stateClass}`}
-      onClick={disabled ? undefined : onClick}
+      onClick={disabled ? undefined : () => { onClick(); setTimeout(focusEditor, 60) }}
       title={title ?? label}
       aria-label={label}
       disabled={disabled}

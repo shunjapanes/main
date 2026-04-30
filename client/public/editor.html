@@ -2243,6 +2243,22 @@
         t.dirty = state.dirty;
         t.undoStack = [...state.undoStack];
         t.redoStack = [...state.redoStack];
+        // フィルター・表示状態をタブごとに保存
+        const savedCF = {};
+        for (const k in state.columnFilters) {
+          const f = state.columnFilters[k];
+          savedCF[k] = f.type === 'values'
+            ? { type: 'values', values: new Set(f.values) }
+            : { ...f };
+        }
+        t.columnFilters = savedCF;
+        t.filterVisible = state.filterVisible;
+        t.hiddenRows = new Set(state.hiddenRows);
+        t.hiddenCols = new Set(state.hiddenCols);
+        t.freezeCols = state.freezeCols;
+        t.wrapCells = state.wrapCells;
+        t.wrapRows = new Set(state.wrapRows);
+        t.conditionalHL = state.conditionalHL;
       }
 
       function switchTab(idx) {
@@ -2276,6 +2292,65 @@
         state.dirty = savedDirty;
         state.undoStack = savedUndo;
         state.redoStack = savedRedo;
+        // フィルター・表示状態をタブから復元
+        {
+          const restoredCF = {};
+          for (const k in (t.columnFilters || {})) {
+            const f = t.columnFilters[k];
+            restoredCF[k] = f.type === 'values'
+              ? { type: 'values', values: new Set(f.values) }
+              : { ...f };
+          }
+          state.columnFilters = restoredCF;
+          state.filterVisible = t.filterVisible || false;
+          state.hiddenRows = t.hiddenRows ? new Set(t.hiddenRows) : new Set();
+          state.hiddenCols = t.hiddenCols ? new Set(t.hiddenCols) : new Set();
+          state.freezeCols = t.freezeCols || 0;
+          state.wrapCells = t.wrapCells || false;
+          state.wrapRows = t.wrapRows ? new Set(t.wrapRows) : new Set();
+          state.conditionalHL = t.conditionalHL || false;
+          // filteredIndicesをレンダリングなしで再計算
+          _visibleRowsCache = null;
+          const fkeys = Object.keys(state.columnFilters);
+          if (!fkeys.length) {
+            state.filteredIndices = null;
+            els.filterClear.style.display = 'none';
+            els.filterExport.style.display = 'none';
+          } else {
+            const fi = [];
+            state.data.forEach((row, idx) => {
+              let match = true;
+              for (const k of fkeys) {
+                const ci = parseInt(k);
+                const f = state.columnFilters[k];
+                const val = (ci < row.length ? row[ci] : '') ?? '';
+                if (f.type === 'text' && !val.toLowerCase().includes(f.query.toLowerCase())) { match = false; break; }
+                if (f.type === 'values' && !f.values.has(val)) { match = false; break; }
+                if (f.type === 'range') {
+                  const num = parseFloat(val);
+                  if (isNaN(num) || (f.min !== null && num < f.min) || (f.max !== null && num > f.max)) { match = false; break; }
+                }
+              }
+              if (match) fi.push(idx);
+            });
+            state.filteredIndices = fi;
+            els.filterClear.style.display = '';
+            els.filterExport.style.display = '';
+          }
+          // フィルタートグルボタン外観を復元
+          const fOn = state.filterVisible;
+          els.filterToggle.style.background = fOn ? '#eff6ff' : '';
+          els.filterToggle.style.borderColor = fOn ? 'var(--accent)' : '';
+          els.filterToggle.style.color = fOn ? 'var(--accent)' : '';
+          els.filterToggle.setAttribute('aria-pressed', String(fOn));
+          els.filterToggle.setAttribute('aria-label', fOn ? 'フィルター行を非表示' : 'フィルター行を表示');
+          // 折り返しボタン外観を復元
+          document.body.classList.toggle('wrap-cells', state.wrapCells);
+          const bw = $('btn-wrap');
+          bw.classList.toggle('active-state', state.wrapCells);
+          bw.setAttribute('aria-pressed', String(state.wrapCells));
+          bw.setAttribute('aria-label', state.wrapCells ? 'セル折り返しをOFFにする' : 'セル折り返しをONにする');
+        }
         applyHeaderMapping();
         if (state.dirty) {
           els.dirty.classList.add("show");

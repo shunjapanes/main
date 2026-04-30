@@ -1,6 +1,6 @@
 import { type Ref, useEffect, useRef, useState } from 'react'
 import { Search, Replace, Hash, ChevronDown, ChevronUp, X } from 'lucide-react'
-import { send } from '../lib/bridge'
+import { send, focusEditor } from '../lib/bridge'
 
 interface Props {
   inputRef?: Ref<HTMLInputElement>
@@ -57,13 +57,13 @@ export default function SearchBar({ inputRef, searchCount, searchQuery: external
             if (e.key === 'Enter') {
               e.shiftKey ? send('searchPrev') : send('searchNext')
             }
-            if (e.key === 'Escape') { handleQueryChange(''); send('clearSearch') }
+            if (e.key === 'Escape') { handleQueryChange(''); send('clearSearch'); focusEditor() }
             if (cmd && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); (e.target as HTMLInputElement).select() }
           }}
         />
         {searchCount && <span className="mx-1 text-gray-500 text-[10px] whitespace-nowrap">{searchCount}</span>}
         {query && (
-          <button className="mr-1 text-gray-400 hover:text-gray-600" onClick={() => { handleQueryChange(''); send('clearSearch') }}>
+          <button className="mr-1 text-gray-400 hover:text-gray-600" onClick={() => { handleQueryChange(''); send('clearSearch'); focusEditor() }}>
             <X size={12} />
           </button>
         )}
