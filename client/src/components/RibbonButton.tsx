@@ -25,7 +25,7 @@ export default function RibbonButton({ icon: Icon, label, onClick, disabled, act
   return (
     <button
       className={`${base} ${sizeClass} ${stateClass}`}
-      onClick={disabled ? undefined : () => { onClick(); setTimeout(focusEditor, 60) }}
+      onClick={disabled ? undefined : () => { onClick(); focusEditor() }}
       title={title ?? label}
       aria-label={label}
       disabled={disabled}

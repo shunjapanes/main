@@ -3,7 +3,7 @@ import RibbonToolbar from './components/RibbonToolbar'
 import SearchBar from './components/SearchBar'
 import FileTabBar from './components/FileTabBar'
 import StatusBar from './components/StatusBar'
-import { send } from './lib/bridge'
+import { send, focusEditor } from './lib/bridge'
 
 interface Tab {
   name: string
@@ -91,7 +91,7 @@ export default function App() {
     const reader = new FileReader()
     reader.onload = (ev) => {
       const content = ev.target?.result as string
-      if (content != null) send('openContent', { content, filename: file.name })
+      if (content != null) { send('openContent', { content, filename: file.name }); focusEditor() }
     }
     reader.readAsText(file)
     e.target.value = ''
