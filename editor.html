@@ -2337,6 +2337,7 @@
             els.filterClear.style.display = '';
             els.filterExport.style.display = '';
           }
+          updateHiddenStatus();
           // フィルタートグルボタン外観を復元
           const fOn = state.filterVisible;
           els.filterToggle.style.background = fOn ? '#eff6ff' : '';
@@ -8282,6 +8283,27 @@
               state.delimiter = detectDelimiter(payload.content, fname);
               parseData(payload.content);
               clearAutoDropColumns(); applyHeaderMapping();
+              // 新規ファイルロード時はビュー状態をリセット
+              state.columnFilters = {};
+              state.filteredIndices = null;
+              state.filterVisible = false;
+              state.hiddenRows = new Set();
+              state.hiddenCols = new Set();
+              state.freezeCols = 0;
+              state.wrapCells = false;
+              state.wrapRows.clear();
+              state.conditionalHL = false;
+              _visibleRowsCache = null;
+              els.filterClear.style.display = 'none';
+              els.filterExport.style.display = 'none';
+              els.filterToggle.style.background = '';
+              els.filterToggle.style.borderColor = '';
+              els.filterToggle.style.color = '';
+              els.filterToggle.setAttribute('aria-pressed', 'false');
+              document.body.classList.remove('wrap-cells');
+              var bwReset = $('btn-wrap');
+              bwReset.classList.remove('active-state');
+              bwReset.setAttribute('aria-pressed', 'false');
               var tab = {
                 fileName: fname, headers: state.headers, data: state.data,
                 delimiter: state.delimiter, colWidths: {}, sortCol: -1, sortAsc: true,
@@ -8406,7 +8428,7 @@
           },
           'dictEditor':      function() { openDictEditor(); },
           'showHelp':        function() { showManual(); },
-          'switchTab':       function() { if(typeof payload === 'number') switchTab(payload); },
+          'switchTab':       function() { if(typeof payload === 'number') { switchTab(payload); execSearch(); } },
           'closeTab':        function() { if(typeof payload === 'number') closeTab(payload); },
           'gotoRow':         function() { if(payload) gotoRow(payload); },
           'search':          function() {
