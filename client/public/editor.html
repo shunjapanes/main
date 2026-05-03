@@ -1060,6 +1060,13 @@
         background: rgba(168, 85, 247, 0.1) !important;
       }
 
+      /* ===価格連携チェック=== */
+      td.price-ng {
+        background: rgba(220, 38, 38, 0.10) !important;
+        outline: 1px solid rgba(220, 38, 38, 0.35);
+        outline-offset: -1px;
+      }
+
       /* ===フリーズ列=== */
       td.frozen-col {
         position: -webkit-sticky;
@@ -1608,6 +1615,15 @@
       >
         SEJ連携
       </button>
+      <button
+        type="button"
+        class="btn"
+        id="btn-price-ref"
+        title="経路価格スケジュール参照JSONを連携&#10;クリック: 参照JSONファイルを選択&#10;チケット名をキーに価格・アップグレード情報を照合&#10;不一致セルを赤ハイライト表示&#10;&#10;もう一度押すと連携解除"
+        aria-label="経路価格スケジュール連携"
+      >
+        価格連携
+      </button>
       <div class="toolbar-sep" role="separator" aria-hidden="true"></div>
       <button
         type="button"
@@ -2121,6 +2137,7 @@
         // SEJ連携用: 席種エリアマスタ
         sejMaster: null, // { byCode: { "MMTGPE25021": { disp_nm, control_nm, nte, ... } }, fileName }
         sejVirtualCols: null, // { indices: [i1, i2, ...], keys: ["grp_nm", ...] } 保存時除外する仮想列
+        priceRef: null, // 経路価格スケジュール参照 { meta, colMap, lookup: Map<ticket→row> }
 
         // ズーム
         zoomLevel: 100, // パーセント
@@ -2607,6 +2624,18 @@
           sejBtn.classList.remove("drag-over");
           if (e.dataTransfer.files && e.dataTransfer.files[0]) {
             loadSejMasterFile(e.dataTransfer.files[0]);
+          }
+        });
+        $("btn-price-ref").onclick = togglePriceRef;
+        // ドラッグ&ドロップで価格参照JSONを読込
+        const priceRefBtn = $("btn-price-ref");
+        priceRefBtn.addEventListener("dragover", (e) => { e.preventDefault(); priceRefBtn.classList.add("drag-over"); });
+        priceRefBtn.addEventListener("dragleave", () => priceRefBtn.classList.remove("drag-over"));
+        priceRefBtn.addEventListener("drop", (e) => {
+          e.preventDefault();
+          priceRefBtn.classList.remove("drag-over");
+          if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            loadPriceRefFile(e.dataTransfer.files[0]);
           }
         });
         $("btn-vertical-header").onclick = toggleVerticalHeader;
@@ -3921,6 +3950,20 @@
           ? state.headers.findIndex(h => h.trim() === "seat_type_area_cd")
           : -1;
 
+        // 価格連携: 参照列インデックスをキャッシュ
+        let priceRefCols = null;
+        if (state.priceRef) {
+          const cm = state.priceRef.colMap;
+          const fi = (name) => name ? state.headers.findIndex(h => h.trim() === name.trim()) : -1;
+          priceRefCols = {
+            ticketIdx: fi(cm.ticket_col),
+            advanceIdx: fi(cm.advance_price_col),
+            dayIdx: fi(cm.day_price_col),
+            upgradeAmountIdx: fi(cm.upgrade_amount_col),
+            upgradeToIdx: fi(cm.upgrade_to_col),
+          };
+        }
+
         for (let vi = start; vi < end; vi++) {
           const i = rows._direct ? vi : rows._indices[vi];
           const row = state.data[i];
@@ -3994,6 +4037,54 @@
                 if (nm) displayVal += `<span style="color:#2563eb;margin-left:6px;font-size:11px">▸ ${escHtml(nm)}</span>`;
               } else {
                 displayVal += `<span style="color:#dc2626;margin-left:6px;font-size:11px">▸ 未登録</span>`;
+              }
+            }
+            // 価格連携: 不一致セルをハイライト
+            if (priceRefCols) {
+              const { ticketIdx, advanceIdx, dayIdx, upgradeAmountIdx, upgradeToIdx } = priceRefCols;
+              if (j === advanceIdx || j === dayIdx || j === upgradeAmountIdx || j === upgradeToIdx) {
+                const ticketName = ticketIdx >= 0 ? (row[ticketIdx] ?? "").trim() : "";
+                const refRow = ticketName ? state.priceRef.lookup.get(ticketName) : null;
+                if (refRow) {
+                  let isMismatch = false, refDisp = "";
+                  if (j === advanceIdx) {
+                    const refVal = refRow.advance_price;
+                    refDisp = refVal != null ? String(refVal) : "販売なし";
+                    const cellNum = Number(cellVal.replace(/[^0-9]/g, ""));
+                    isMismatch = refVal != null
+                      ? (cellVal !== "" && cellNum !== refVal)
+                      : (cellVal !== "" && cellVal !== "―" && cellVal !== "9999999");
+                  } else if (j === dayIdx) {
+                    const refVal = refRow.day_price;
+                    refDisp = refVal != null ? String(refVal) : "販売なし";
+                    const cellNum = Number(cellVal.replace(/[^0-9]/g, ""));
+                    isMismatch = refVal != null
+                      ? (cellVal !== "" && cellNum !== refVal)
+                      : (cellVal !== "" && cellVal !== "―" && cellVal !== "9999999");
+                  } else if (j === upgradeToIdx) {
+                    const upgrades = refRow.upgrades || [];
+                    refDisp = upgrades.length ? upgrades.map(u => u.to).join(" / ") : "なし";
+                    isMismatch = upgrades.length === 0
+                      ? (cellVal !== "" && cellVal !== "―")
+                      : !upgrades.some(u => u.to.trim() === cellVal.trim());
+                  } else if (j === upgradeAmountIdx) {
+                    const upgrades = refRow.upgrades || [];
+                    const toVal = upgradeToIdx >= 0 ? (row[upgradeToIdx] ?? "").trim() : "";
+                    const matched = toVal ? upgrades.find(u => u.to.trim() === toVal) : upgrades[0];
+                    if (matched) {
+                      refDisp = String(matched.amount);
+                      const cellNum = Number(cellVal.replace(/[^0-9]/g, ""));
+                      isMismatch = cellVal !== "" && cellNum !== matched.amount;
+                    } else if (upgrades.length === 0) {
+                      refDisp = "なし";
+                      isMismatch = cellVal !== "" && cellVal !== "―";
+                    }
+                  }
+                  if (isMismatch) {
+                    cls.push("price-ng");
+                    displayVal += `<span style="color:#dc2626;margin-left:5px;font-size:10px" title="参照値: ${escHtml(refDisp)}">▸ 参照:${escHtml(refDisp)}</span>`;
+                  }
+                }
               }
             }
             html += `<td role="gridcell" data-col="${j}" aria-colindex="${j + 2}" ${style ? `style="${style}"` : ""} class="${cls.join(" ")}" aria-selected="${isSelected}">${displayVal}</td>`;
@@ -6245,12 +6336,15 @@
         state.wrapRows.clear();
         state.regexMode = false;
         state.conditionalHL = false;
+        state.priceRef = null;
         state._dupSet = null;
         state._dupCol = null;
         state.dirty = false;
         document.body.classList.remove("wrap-cells");
         $("btn-wrap").classList.remove("active-state");
         $("btn-wrap").setAttribute("aria-pressed", "false");
+        $("btn-price-ref").classList.remove("active-state");
+        $("btn-price-ref").textContent = "価格連携";
         _visibleRowsCache = null;
         _visibleRowsCacheKey = "";
         lastRenderKey = null;
@@ -7265,6 +7359,60 @@
       function isSejData() {
         const hs = state.headers.map(h => h.trim());
         return hs.includes("sej_template_cd") && hs.includes("word1");
+      }
+
+      // ===== 経路価格スケジュール連携 =====
+      function loadPriceRefFile(file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const json = JSON.parse(reader.result);
+            if (!json.data || !Array.isArray(json.data)) {
+              setStatus("⚠ 参照JSONの形式が不正です（data配列が必要）");
+              return;
+            }
+            const colMap = json.column_map || {};
+            const lookup = new Map();
+            for (const row of json.data) {
+              const key = (row.ticket || "").trim();
+              if (key) lookup.set(key, row);
+            }
+            state.priceRef = { meta: json.meta || {}, colMap, lookup };
+            const cnt = lookup.size;
+            const raceName = json.meta?.race || file.name;
+            $("btn-price-ref").classList.add("active-state");
+            $("btn-price-ref").textContent = `価格連携中 (${cnt})`;
+            state.forceRender = true;
+            renderHeader();
+            renderBody();
+            setStatus(`価格連携: ${raceName} / ${cnt}券種を読み込みました`);
+          } catch (err) {
+            setStatus("⚠ 参照JSON読込失敗: " + err.message);
+          }
+        };
+        reader.readAsText(file, "utf-8");
+      }
+
+      function togglePriceRef() {
+        if (state.priceRef) {
+          const raceName = state.priceRef.meta?.race || "(不明)";
+          if (!confirm(`価格連携を解除しますか？\n\n現在の参照データ:\n${raceName}\n\n解除すると参照データは破棄されます。`)) return;
+          state.priceRef = null;
+          $("btn-price-ref").classList.remove("active-state");
+          $("btn-price-ref").textContent = "価格連携";
+          state.forceRender = true;
+          renderHeader();
+          renderBody();
+          setStatus("価格連携を解除しました");
+          return;
+        }
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".json,application/json";
+        input.onchange = () => {
+          if (input.files && input.files[0]) loadPriceRefFile(input.files[0]);
+        };
+        input.click();
       }
 
       // ===== SEJ HTML出力 =====
@@ -8293,6 +8441,11 @@
               state.wrapCells = false;
               state.wrapRows.clear();
               state.conditionalHL = false;
+              if (state.priceRef) {
+                state.priceRef = null;
+                $('btn-price-ref').classList.remove('active-state');
+                $('btn-price-ref').textContent = '価格連携';
+              }
               _visibleRowsCache = null;
               els.filterClear.style.display = 'none';
               els.filterExport.style.display = 'none';
