@@ -1097,6 +1097,138 @@
       #manual-dialog.show {
         display: flex;
       }
+
+      /* ===デバッグメモダイアログ=== */
+      #debug-memo-dialog {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 1300;
+        align-items: center;
+        justify-content: center;
+      }
+      #debug-memo-dialog.show {
+        display: flex;
+      }
+      #debug-memo-inner {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        padding: 20px 24px;
+        width: min(560px, calc(100vw - 24px));
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+        font-family: var(--font-ui);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      #debug-memo-inner h2 {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+      .dbm-label {
+        font-size: 11px;
+        color: var(--text-dim);
+        margin-bottom: 3px;
+      }
+      #debug-memo-title {
+        width: 100%;
+        padding: 5px 8px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        font-size: 12px;
+        font-family: var(--font-ui);
+        outline: none;
+        box-sizing: border-box;
+      }
+      #debug-memo-title:focus { border-color: var(--accent); }
+      #debug-memo-body {
+        min-height: 120px;
+        max-height: 260px;
+        overflow-y: auto;
+        padding: 7px 9px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        font-size: 12px;
+        font-family: var(--font-ui);
+        line-height: 1.6;
+        outline: none;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      #debug-memo-body:focus { border-color: var(--accent); }
+      #debug-memo-body[data-placeholder]:empty::before {
+        content: attr(data-placeholder);
+        color: var(--text-dim);
+        pointer-events: none;
+      }
+      #debug-memo-images {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .dbm-img-thumb {
+        position: relative;
+        border: 1px solid var(--border);
+      }
+      .dbm-img-thumb img {
+        display: block;
+        max-width: 140px;
+        max-height: 100px;
+        object-fit: contain;
+      }
+      .dbm-img-del {
+        position: absolute;
+        top: 1px;
+        right: 1px;
+        background: rgba(0,0,0,0.55);
+        color: #fff;
+        border: none;
+        font-size: 11px;
+        cursor: pointer;
+        padding: 1px 4px;
+        line-height: 1.4;
+      }
+      .dbm-pat-row {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      #debug-memo-pat {
+        flex: 1;
+        padding: 5px 8px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        font-size: 12px;
+        font-family: var(--font-mono);
+        outline: none;
+      }
+      #debug-memo-pat:focus { border-color: var(--accent); }
+      .dbm-btns {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 4px;
+      }
+      .dbm-btns button {
+        padding: 6px 14px;
+        font-size: 12px;
+        border: 1px solid var(--border);
+        cursor: pointer;
+        background: var(--surface2);
+        font-family: var(--font-ui);
+      }
+      .dbm-btns button:hover { background: #e5e5e7; }
+      .dbm-btns button.primary {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+      .dbm-btns button.primary:hover { opacity: 0.88; }
+      .dbm-btns button:disabled { opacity: 0.5; cursor: default; }
       #manual-content {
         background: var(--surface);
         border: 1px solid var(--border);
@@ -1643,6 +1775,15 @@
       >
         ?
       </button>
+      <button
+        type="button"
+        class="btn"
+        id="btn-debug-memo"
+        title="デバッグメモを書いてGitHubに送信&#10;バグ・改善点をメモしてアップロード&#10;スクリーンショットも貼り付け可能&#10;&#10;蓄積したメモは /fixmemos コマンドで一括処理"
+        aria-label="デバッグメモを書いてGitHubに送信"
+      >
+        🐛 メモ
+      </button>
 
       <div id="search-area" role="search">
         <input
@@ -1891,6 +2032,51 @@
           <button type="button" class="danger" id="reload-discard" aria-label="変更を破棄して続ける">
             変更を破棄して続ける
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- デバッグメモダイアログ -->
+    <div id="debug-memo-dialog" role="dialog" aria-modal="true" aria-labelledby="dbm-title">
+      <div id="debug-memo-inner">
+        <h2 id="dbm-title">🐛 デバッグメモ</h2>
+
+        <!-- PAT未設定時のみ表示 -->
+        <div id="dbm-pat-section" style="display:none">
+          <div class="dbm-label">GitHub Personal Access Token（初回のみ）
+            <a href="https://github.com/settings/tokens/new?scopes=repo&description=tsv-editor-debug-memo"
+               target="_blank" rel="noopener" style="margin-left:6px;color:var(--accent);font-size:10px">
+              ↗ 発行ページ（repo スコープ）
+            </a>
+          </div>
+          <div class="dbm-pat-row">
+            <input type="password" id="debug-memo-pat" placeholder="ghp_xxxxx..." autocomplete="off" />
+            <button type="button" id="dbm-save-pat" class="primary"
+                    style="padding:5px 10px;font-size:12px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer;font-family:var(--font-ui)">
+              保存
+            </button>
+          </div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:3px">
+            localStorageに保存されます。必要最小限スコープ: <code>public_repo</code>
+          </div>
+        </div>
+
+        <div>
+          <div class="dbm-label">タイトル（任意）</div>
+          <input type="text" id="debug-memo-title" placeholder="例: 検索後にUndoが効かない" maxlength="80" />
+        </div>
+
+        <div>
+          <div class="dbm-label">内容（スクリーンショットは Ctrl+V / Cmd+V でペースト可）</div>
+          <div id="debug-memo-body" contenteditable="true" role="textbox" aria-multiline="true"
+               data-placeholder="バグの再現手順・期待動作・実際の動作などを書いてください..."></div>
+        </div>
+
+        <div id="debug-memo-images"></div>
+
+        <div class="dbm-btns">
+          <button type="button" id="dbm-cancel">キャンセル</button>
+          <button type="button" id="dbm-upload" class="primary">⬆ GitHubにアップロード</button>
         </div>
       </div>
     </div>
@@ -2644,6 +2830,7 @@
         $("btn-new-sheet").onclick = addNewSheet;
         $("btn-reset-view").onclick = resetView;
         $("btn-manual").onclick = showManual;
+        $("btn-debug-memo").onclick = openDebugMemoDialog;
         $("btn-regex").onclick = toggleRegexMode;
         $("man-close").onclick = hideManual;
         $("manual-dialog").onclick = (e) => {
@@ -2946,6 +3133,9 @@
       }
 
       // ===== ヘッダー自動変換（席種エリアマスター対応）=====
+      const DEBUG_MEMO_PAT_KEY    = "tsv-editor-debug-memo-pat";
+      const DEBUG_MEMO_REPO_KEY   = "tsv-editor-debug-memo-repo";
+      const DEBUG_MEMO_BRANCH_KEY = "tsv-editor-debug-memo-branch";
       const HEADER_MAP_STORAGE_KEY = "tsv-editor-header-map";
       const HEADER_COMMENTS_STORAGE_KEY = "tsv-editor-header-comments";
 
@@ -8351,6 +8541,230 @@
           }
         });
       }
+
+      // ===== デバッグメモ機能 =====
+
+      // PAT helpers
+      function dbmGetPat() {
+        try { return atob(localStorage.getItem(DEBUG_MEMO_PAT_KEY) || ""); } catch { return ""; }
+      }
+      function dbmSavePat(pat) {
+        localStorage.setItem(DEBUG_MEMO_PAT_KEY, btoa(pat));
+      }
+      function dbmGetRepo() {
+        return localStorage.getItem(DEBUG_MEMO_REPO_KEY) || "shunjapanes/main";
+      }
+      function dbmGetBranch() {
+        return localStorage.getItem(DEBUG_MEMO_BRANCH_KEY) || "main";
+      }
+
+      // ダイアログ開く
+      function openDebugMemoDialog() {
+        const dlg = $("debug-memo-dialog");
+        const patSection = $("dbm-pat-section");
+        const pat = dbmGetPat();
+        patSection.style.display = pat ? "none" : "";
+
+        // 本文・タイトルリセット
+        $("debug-memo-title").value = "";
+        const body = $("debug-memo-body");
+        body.innerHTML = "";
+        $("debug-memo-images").innerHTML = "";
+        _dbmImages = [];
+
+        dlg.classList.add("show");
+        body.focus();
+
+        // 閉じるハンドラー
+        dlg.onkeydown = (e) => { if (e.key === "Escape") closeDebugMemoDialog(); };
+        $("dbm-cancel").onclick = closeDebugMemoDialog;
+
+        // PAT保存
+        $("dbm-save-pat").onclick = async () => {
+          const val = $("debug-memo-pat").value.trim();
+          if (!val) return;
+          $("dbm-save-pat").disabled = true;
+          $("dbm-save-pat").textContent = "確認中...";
+          const ok = await dbmValidatePat(val);
+          $("dbm-save-pat").disabled = false;
+          $("dbm-save-pat").textContent = "保存";
+          if (ok) {
+            dbmSavePat(val);
+            patSection.style.display = "none";
+            setStatus("✓ GitHub PATを保存しました");
+          } else {
+            setStatus("⚠ PATが無効か権限が足りません（repo スコープが必要）");
+          }
+        };
+
+        // 画像ペーストハンドラー
+        body.addEventListener("paste", dbmHandlePaste, { once: false });
+
+        // アップロードボタン
+        $("dbm-upload").onclick = dbmUpload;
+      }
+
+      function closeDebugMemoDialog() {
+        $("debug-memo-dialog").classList.remove("show");
+        $("debug-memo-body").removeEventListener("paste", dbmHandlePaste);
+      }
+
+      let _dbmImages = []; // [{ dataUrl, type }]
+
+      function dbmHandlePaste(e) {
+        const items = e.clipboardData?.items || [];
+        let hasImage = false;
+        for (const item of items) {
+          if (item.type.startsWith("image/")) {
+            hasImage = true;
+            e.preventDefault();
+            const blob = item.getAsFile();
+            const reader = new FileReader();
+            reader.onload = () => {
+              _dbmImages.push({ dataUrl: reader.result, type: item.type });
+              dbmRenderImagePreviews();
+            };
+            reader.readAsDataURL(blob);
+          }
+        }
+        // テキストペーストは通常通り（preventDefault しない）
+        _ = hasImage;
+      }
+
+      function dbmRenderImagePreviews() {
+        const container = $("debug-memo-images");
+        container.innerHTML = "";
+        _dbmImages.forEach((img, i) => {
+          const wrap = document.createElement("div");
+          wrap.className = "dbm-img-thumb";
+          const im = document.createElement("img");
+          im.src = img.dataUrl;
+          im.alt = `screenshot ${i + 1}`;
+          const del = document.createElement("button");
+          del.className = "dbm-img-del";
+          del.textContent = "✕";
+          del.title = "削除";
+          del.onclick = () => {
+            _dbmImages.splice(i, 1);
+            dbmRenderImagePreviews();
+          };
+          wrap.appendChild(im);
+          wrap.appendChild(del);
+          container.appendChild(wrap);
+        });
+      }
+
+      async function dbmValidatePat(pat) {
+        try {
+          const r = await fetch("https://api.github.com/user", {
+            headers: { Authorization: `Bearer ${pat}`, "X-GitHub-Api-Version": "2022-11-28" }
+          });
+          return r.ok;
+        } catch { return false; }
+      }
+
+      async function dbmGitHubPut(pat, repo, branch, path, message, base64Content) {
+        // 既存ファイルのSHAを取得（なければ新規）
+        let sha;
+        try {
+          const r = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+            headers: { Authorization: `Bearer ${pat}`, "X-GitHub-Api-Version": "2022-11-28" }
+          });
+          if (r.ok) { const d = await r.json(); sha = d.sha; }
+        } catch {}
+        const body = { message, content: base64Content, branch };
+        if (sha) body.sha = sha;
+        const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${pat}`,
+            "Content-Type": "application/json",
+            "X-GitHub-Api-Version": "2022-11-28",
+          },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || `HTTP ${res.status}`);
+        }
+        return res;
+      }
+
+      async function dbmUpload() {
+        const btn = $("dbm-upload");
+        const pat = dbmGetPat();
+        if (!pat) {
+          $("dbm-pat-section").style.display = "";
+          $("debug-memo-pat").focus();
+          return;
+        }
+        const title = $("debug-memo-title").value.trim() || "デバッグメモ";
+        const bodyEl = $("debug-memo-body");
+        const bodyText = bodyEl.innerText.trim();
+        if (!bodyText && _dbmImages.length === 0) {
+          setStatus("⚠ 内容を入力してください");
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "アップロード中...";
+
+        const repo = dbmGetRepo();
+        const branch = dbmGetBranch();
+        const now = new Date();
+        const ts = [
+          now.getFullYear(),
+          String(now.getMonth() + 1).padStart(2, "0"),
+          String(now.getDate()).padStart(2, "0"),
+          "-",
+          String(now.getHours()).padStart(2, "0"),
+          String(now.getMinutes()).padStart(2, "0"),
+          String(now.getSeconds()).padStart(2, "0"),
+        ].join("").replace("-", "-");
+        const slug = title.replace(/[^\w぀-鿿]/g, "-").replace(/-+/g, "-").slice(0, 40);
+        const memoPath = `debug-memos/${ts}_${slug}.md`;
+
+        // 画像を先にアップロード
+        const imageRefs = [];
+        for (let i = 0; i < _dbmImages.length; i++) {
+          const img = _dbmImages[i];
+          const ext = img.type === "image/png" ? "png" : "jpg";
+          const imgPath = `debug-memos/images/${ts}_${i + 1}.${ext}`;
+          const base64 = img.dataUrl.split(",")[1];
+          try {
+            await dbmGitHubPut(pat, repo, branch, imgPath, `debug memo image: ${ts}`, base64);
+            imageRefs.push(`![screenshot ${i + 1}](images/${ts}_${i + 1}.${ext})`);
+          } catch (e) {
+            btn.disabled = false;
+            btn.textContent = "⬆ GitHubにアップロード";
+            setStatus(`⚠ 画像アップロード失敗: ${e.message}`);
+            return;
+          }
+        }
+
+        // Markdownファイルを生成
+        const dateStr = now.toLocaleString("ja-JP");
+        let md = `# ${title}\n\n`;
+        md += `- 日時: ${dateStr}\n`;
+        md += `- URL: ${location.href}\n\n`;
+        md += `## 内容\n\n${bodyText || "（内容なし）"}\n`;
+        if (imageRefs.length) {
+          md += `\n## スクリーンショット\n\n${imageRefs.join("\n")}\n`;
+        }
+
+        const mdBase64 = btoa(unescape(encodeURIComponent(md)));
+        try {
+          await dbmGitHubPut(pat, repo, branch, memoPath, `debug memo: ${title}`, mdBase64);
+          closeDebugMemoDialog();
+          setStatus(`✓ メモをアップロードしました → ${memoPath}`);
+        } catch (e) {
+          setStatus(`⚠ メモのアップロード失敗: ${e.message}`);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "⬆ GitHubにアップロード";
+        }
+      }
+
     </script>
 
     <!-- ===== RIBBON BRIDGE PATCH ===== -->
