@@ -2764,7 +2764,10 @@
         $("btn-redo").onclick = redo;
         els.filterToggle.onclick = toggleFilter;
         els.filterClear.onclick = clearAllFilters;
-        els.search.oninput = debounce(execSearch, 150);
+        let _imeComposing = false;
+        els.search.addEventListener('compositionstart', () => { _imeComposing = true; });
+        els.search.addEventListener('compositionend', () => { _imeComposing = false; execSearch(); });
+        els.search.oninput = debounce(() => { if (!_imeComposing) execSearch(); }, 150);
         $("btn-next").onclick = () => moveSearch(1);
         $("btn-prev").onclick = () => moveSearch(-1);
         $("goto-input").onkeydown = (e) => {
@@ -3075,6 +3078,7 @@
               cur += '"';
               i++;
             } else if (c === '"') inQuote = false;
+            else if (c === '\r') { cur += '\n'; if (next === '\n') i++; }
             else cur += c;
           } else {
             if (c === '"') inQuote = true;
@@ -3868,7 +3872,7 @@
           // コメントツールチップ（アイコンなし、ホバーで表示）
           const hasComment = !!comment;
           const tooltipHtml = hasComment ? `<div class="th-tooltip visible">${escHtml(comment)}</div>` : `<div class="th-tooltip" data-tooltip-col="${i}"></div>`;
-          html += `<th scope="col" style="${w}${freezeLeft}" data-col="${i}" aria-colindex="${i + 2}" class="${active} ${frozen} ${freezeBorder} ${hasComment ? 'has-comment' : ''}" aria-sort="${sortDir}" data-comment-col="${i}">
+          html += `<th scope="col" aria-label="${escHtml(displayH)}" style="${w}${freezeLeft}" data-col="${i}" aria-colindex="${i + 2}" class="${active} ${frozen} ${freezeBorder} ${hasComment ? 'has-comment' : ''}" aria-sort="${sortDir}" data-comment-col="${i}">
       <div class="th-inner">
         <span class="th-label" title="${escHtml(labelTitle)}">${escHtml(displayH)}</span>
         <div class="th-controls">
@@ -5498,6 +5502,31 @@
       }
 
       // 単一行のCSV/TSVをクオート対応で分割する（ペースト用）
+      // セル内改行（quoted fields）を正しく扱う汎用パーサー
+      function parseDelimited(text, delim) {
+        const rows = [];
+        let row = [], cur = "", inQuote = false;
+        for (let i = 0; i < text.length; i++) {
+          const c = text[i], next = text[i + 1];
+          if (inQuote) {
+            if (c === '"' && next === '"') { cur += '"'; i++; }
+            else if (c === '"') inQuote = false;
+            else if (c === '\r') { cur += '\n'; if (next === '\n') i++; }
+            else cur += c;
+          } else {
+            if (c === '"') inQuote = true;
+            else if (c === delim) { row.push(cur); cur = ""; }
+            else if (c === "\r" || c === "\n") {
+              if (c === "\r" && next === "\n") i++;
+              row.push(cur); rows.push(row); row = []; cur = "";
+            } else cur += c;
+          }
+        }
+        if (cur || row.length) { row.push(cur); rows.push(row); }
+        while (rows.length > 0 && rows[rows.length - 1].every(c => c === "")) rows.pop();
+        return rows;
+      }
+
       function splitDelimited(line, delim) {
         const fields = [];
         let cur = "",
@@ -5590,19 +5619,11 @@
         let cb;
         try {
           const txt = await navigator.clipboard.readText();
-          const lines = txt.split(/\r?\n/);
-          while (lines.length > 0 && lines[lines.length - 1] === "")
-            lines.pop();
-          if (!lines.length) return;
-          const delim = txt.includes("\t")
-            ? "\t"
-            : txt.includes(",")
-              ? ","
-              : "\t";
-          const data2d = lines.map((l) => splitDelimited(l, delim));
-          // 末尾の全セル空行を除去（コピー時の末尾改行で空行ができる場合の対策）
-          while (data2d.length > 1 && data2d[data2d.length - 1].every(c => c === "")) data2d.pop();
-          cb = { data2d, rows: data2d.length, cols: data2d[0].length };
+          if (!txt) return;
+          const delim = txt.includes("\t") ? "\t" : txt.includes(",") ? "," : "\t";
+          const data2d = parseDelimited(txt, delim);
+          if (!data2d.length) return;
+          cb = { data2d, rows: data2d.length, cols: Math.max(...data2d.map(r => r.length)) };
           state.clipboard = cb;
         } catch {
           if (state.clipboard) {
@@ -6831,7 +6852,13 @@
         const maxR = scope ? scope.r2 : state.data.length - 1;
         const minC = scope ? scope.c1 : 0;
         const maxC = scope ? scope.c2 : state.headers.length - 1;
-        for (let r = minR; r <= maxR; r++) {
+        // フィルター中は可視行のみ検索（非表示行の結果はカーソルが消えるため）
+        const vr = getVisibleRows();
+        const rowsToSearch = vr._direct
+          ? null
+          : vr._indices.filter(r => r >= minR && r <= maxR);
+        const iter = rowsToSearch ?? Array.from({ length: maxR - minR + 1 }, (_, k) => minR + k);
+        for (const r of iter) {
           for (let c = minC; c <= maxC; c++) {
             const v = safeGet(r, c);
             if (matcher(v)) state.searchHits.push({ row: r, col: c });
