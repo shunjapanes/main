@@ -9022,6 +9022,7 @@
           },
           'dictEditor':      function() { openDictEditor(); },
           'showHelp':        function() { showManual(); },
+          'debugMemo':       function() { openDebugMemoDialog(); },
           'switchTab':       function() { if(typeof payload === 'number') { switchTab(payload); execSearch(); } },
           'closeTab':        function() { if(typeof payload === 'number') closeTab(payload); },
           'gotoRow':         function() { if(payload) gotoRow(payload); },
