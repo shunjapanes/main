@@ -6,7 +6,7 @@ import {
   MoveUp, MoveDown, CopyPlus, AlignLeft, WrapText, PanelLeft, AlignVerticalJustifyCenter,
   Shrink, Highlighter, Layers, RefreshCw,
   Database, Link, Globe, BarChart2, BookOpen, HelpCircle, Eraser,
-  ArrowLeftToLine, ArrowRightToLine, Search
+  ArrowLeftToLine, ArrowRightToLine, Search, Bug
 } from 'lucide-react'
 import RibbonGroup from './RibbonGroup'
 import RibbonButton from './RibbonButton'
@@ -191,6 +191,10 @@ function ToolsTab() {
       <Divider />
       <RibbonGroup label="分析">
         <RibbonButton icon={BarChart2} label="列統計" onClick={() => send('colStats')} title="選択列の統計情報を表示" />
+      </RibbonGroup>
+      <Divider />
+      <RibbonGroup label="デバッグ">
+        <RibbonButton icon={Bug} label="メモ" onClick={() => send('debugMemo')} title="デバッグメモをGitHubに送信" />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="設定・ヘルプ">
