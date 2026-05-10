@@ -56,6 +56,23 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [toggles, setToggles] = useState<ToggleStates>(DEFAULT_TOGGLES)
 
+  // 親フレーム（リボン）にフォーカスがある時も Cmd+Z/Y をエディタに転送
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const cmd = e.ctrlKey || e.metaKey
+      if (!cmd) return
+      const tag = (document.activeElement as HTMLElement)?.tagName
+      if (tag === 'IFRAME') return  // iframe自身がフォーカスを持つ場合は不要
+      if (cmd && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+        e.preventDefault(); send('undo')
+      } else if (cmd && ((e.key === 'z' && e.shiftKey) || e.key === 'y' || e.key === 'Y')) {
+        e.preventDefault(); send('redo')
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   useEffect(() => {
     const handler = (e: MessageEvent<EditorMessage>) => {
       if (!e.data || typeof e.data !== 'object') return

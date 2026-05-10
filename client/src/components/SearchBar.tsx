@@ -55,7 +55,10 @@ export default function SearchBar({ inputRef, searchCount, searchQuery: external
           onKeyDown={e => {
             const cmd = e.ctrlKey || e.metaKey
             if (e.key === 'Enter') {
-              e.shiftKey ? send('searchPrev') : send('searchNext')
+              // デバウンス前でも即検索してからナビゲート
+              if (debounceRef.current) clearTimeout(debounceRef.current)
+              send('search', query)
+              setTimeout(() => send(e.shiftKey ? 'searchPrev' : 'searchNext'), 30)
             }
             if (e.key === 'Escape') { handleQueryChange(''); send('clearSearch'); focusEditor() }
             if (cmd && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); (e.target as HTMLInputElement).select() }

@@ -4885,6 +4885,8 @@
 
       // ===== キーボード =====
       function onKeyDown(e) {
+        // メモダイアログが開いている間はグリッド操作をブロック
+        if ($("debug-memo-dialog")?.classList.contains("show")) return;
         if (e.target.tagName === "INPUT" && e.target.closest("td.editing"))
           return;
         // ダイアログ内でもCtrl+C/Vはセル操作として処理する
@@ -5689,6 +5691,7 @@
         }
         markDirty();
         state.forceRender = true;
+        renderHeader();
         renderBody();
         setStatus("ペーストしました");
       }
@@ -5964,6 +5967,7 @@
         state.forceRender = true;
         renderBody();
         setStatus(`${cnt}件を置換しました${scopeNote}`);
+        execSearch();
       }
       function escRe(s) {
         return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -8520,13 +8524,33 @@
         const nums = nonEmpty.map(Number).filter((v) => !isNaN(v));
         const unique = new Set(vals).size;
         const sum = nums.reduce((a, b) => a + b, 0);
-        let msg = `【${getDisplayHeader(col)}】統計\n`;
-        msg += `総数: ${vals.length}件 / 空白: ${vals.length - nonEmpty.length}件 / ユニーク: ${unique}種\n`;
+        const rows = [
+          ["総数", `${vals.length}件`],
+          ["空白", `${vals.length - nonEmpty.length}件`],
+          ["ユニーク", `${unique}種`],
+        ];
         if (nums.length > 0) {
-          msg += `数値: ${nums.length}件 / 合計: ${fmt(sum)} / 平均: ${fmt(sum / nums.length)}\n`;
-          msg += `最小: ${fmt(Math.min(...nums))} / 最大: ${fmt(Math.max(...nums))}`;
+          rows.push(["数値", `${nums.length}件`]);
+          rows.push(["合計", fmt(sum)]);
+          rows.push(["平均", fmt(sum / nums.length)]);
+          rows.push(["最小", fmt(Math.min(...nums))]);
+          rows.push(["最大", fmt(Math.max(...nums))]);
         }
-        alert(msg);
+        const tableHtml = rows.map(([k, v]) =>
+          `<tr><td style="padding:3px 10px 3px 0;color:#666;white-space:nowrap">${k}</td><td style="padding:3px 0;font-weight:600">${v}</td></tr>`
+        ).join("");
+        const ov = document.createElement("div");
+        ov.className = "modal-overlay show";
+        ov.innerHTML = `<div class="modal-dialog" style="min-width:220px">
+          <div class="modal-title">【${escHtml(getDisplayHeader(col))}】統計</div>
+          <table style="border-collapse:collapse;font-size:13px;margin:8px 0">${tableHtml}</table>
+          <div class="modal-btns"><button id="stats-ok" class="btn-primary">閉じる</button></div>
+        </div>`;
+        document.body.appendChild(ov);
+        const close = () => { ov.remove(); };
+        ov.querySelector("#stats-ok").onclick = close;
+        ov.onkeydown = (e) => { if (e.key === "Escape") close(); };
+        ov.querySelector("#stats-ok").focus();
       }
 
       // ===== 条件付きハイライト =====
