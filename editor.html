@@ -1060,13 +1060,6 @@
         background: rgba(168, 85, 247, 0.1) !important;
       }
 
-      /* ===価格連携チェック=== */
-      td.price-ng {
-        background: rgba(220, 38, 38, 0.10) !important;
-        outline: 1px solid rgba(220, 38, 38, 0.35);
-        outline-offset: -1px;
-      }
-
       /* ===フリーズ列=== */
       td.frozen-col {
         position: -webkit-sticky;
@@ -1097,138 +1090,6 @@
       #manual-dialog.show {
         display: flex;
       }
-
-      /* ===デバッグメモダイアログ=== */
-      #debug-memo-dialog {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.4);
-        z-index: 1300;
-        align-items: center;
-        justify-content: center;
-      }
-      #debug-memo-dialog.show {
-        display: flex;
-      }
-      #debug-memo-inner {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        padding: 20px 24px;
-        width: min(560px, calc(100vw - 24px));
-        max-height: 90vh;
-        overflow-y: auto;
-        position: relative;
-        font-family: var(--font-ui);
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-      #debug-memo-inner h2 {
-        font-size: 14px;
-        font-weight: 600;
-        margin: 0 0 4px;
-      }
-      .dbm-label {
-        font-size: 11px;
-        color: var(--text-dim);
-        margin-bottom: 3px;
-      }
-      #debug-memo-title {
-        width: 100%;
-        padding: 5px 8px;
-        border: 1px solid var(--border);
-        background: var(--surface2);
-        font-size: 12px;
-        font-family: var(--font-ui);
-        outline: none;
-        box-sizing: border-box;
-      }
-      #debug-memo-title:focus { border-color: var(--accent); }
-      #debug-memo-body {
-        min-height: 120px;
-        max-height: 260px;
-        overflow-y: auto;
-        padding: 7px 9px;
-        border: 1px solid var(--border);
-        background: var(--surface2);
-        font-size: 12px;
-        font-family: var(--font-ui);
-        line-height: 1.6;
-        outline: none;
-        white-space: pre-wrap;
-        word-break: break-word;
-      }
-      #debug-memo-body:focus { border-color: var(--accent); }
-      #debug-memo-body[data-placeholder]:empty::before {
-        content: attr(data-placeholder);
-        color: var(--text-dim);
-        pointer-events: none;
-      }
-      #debug-memo-images {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-      }
-      .dbm-img-thumb {
-        position: relative;
-        border: 1px solid var(--border);
-      }
-      .dbm-img-thumb img {
-        display: block;
-        max-width: 140px;
-        max-height: 100px;
-        object-fit: contain;
-      }
-      .dbm-img-del {
-        position: absolute;
-        top: 1px;
-        right: 1px;
-        background: rgba(0,0,0,0.55);
-        color: #fff;
-        border: none;
-        font-size: 11px;
-        cursor: pointer;
-        padding: 1px 4px;
-        line-height: 1.4;
-      }
-      .dbm-pat-row {
-        display: flex;
-        gap: 6px;
-        align-items: center;
-      }
-      #debug-memo-pat {
-        flex: 1;
-        padding: 5px 8px;
-        border: 1px solid var(--border);
-        background: var(--surface2);
-        font-size: 12px;
-        font-family: var(--font-mono);
-        outline: none;
-      }
-      #debug-memo-pat:focus { border-color: var(--accent); }
-      .dbm-btns {
-        display: flex;
-        gap: 8px;
-        justify-content: flex-end;
-        margin-top: 4px;
-      }
-      .dbm-btns button {
-        padding: 6px 14px;
-        font-size: 12px;
-        border: 1px solid var(--border);
-        cursor: pointer;
-        background: var(--surface2);
-        font-family: var(--font-ui);
-      }
-      .dbm-btns button:hover { background: #e5e5e7; }
-      .dbm-btns button.primary {
-        background: var(--accent);
-        color: #fff;
-        border-color: var(--accent);
-      }
-      .dbm-btns button.primary:hover { opacity: 0.88; }
-      .dbm-btns button:disabled { opacity: 0.5; cursor: default; }
       #manual-content {
         background: var(--surface);
         border: 1px solid var(--border);
@@ -1747,15 +1608,6 @@
       >
         SEJ連携
       </button>
-      <button
-        type="button"
-        class="btn"
-        id="btn-price-ref"
-        title="経路価格スケジュール参照JSONを連携&#10;クリック: 参照JSONファイルを選択&#10;チケット名をキーに価格・アップグレード情報を照合&#10;不一致セルを赤ハイライト表示&#10;&#10;もう一度押すと連携解除"
-        aria-label="経路価格スケジュール連携"
-      >
-        価格連携
-      </button>
       <div class="toolbar-sep" role="separator" aria-hidden="true"></div>
       <button
         type="button"
@@ -1774,15 +1626,6 @@
         aria-label="ヘルプを開く"
       >
         ?
-      </button>
-      <button
-        type="button"
-        class="btn"
-        id="btn-debug-memo"
-        title="デバッグメモを書いてGitHubに送信&#10;バグ・改善点をメモしてアップロード&#10;スクリーンショットも貼り付け可能&#10;&#10;蓄積したメモは /fixmemos コマンドで一括処理"
-        aria-label="デバッグメモを書いてGitHubに送信"
-      >
-        🐛 メモ
       </button>
 
       <div id="search-area" role="search">
@@ -2036,51 +1879,6 @@
       </div>
     </div>
 
-    <!-- デバッグメモダイアログ -->
-    <div id="debug-memo-dialog" role="dialog" aria-modal="true" aria-labelledby="dbm-title">
-      <div id="debug-memo-inner">
-        <h2 id="dbm-title">🐛 デバッグメモ</h2>
-
-        <!-- PAT未設定時のみ表示 -->
-        <div id="dbm-pat-section" style="display:none">
-          <div class="dbm-label">GitHub Personal Access Token（初回のみ）
-            <a href="https://github.com/settings/tokens/new?scopes=repo&description=tsv-editor-debug-memo"
-               target="_blank" rel="noopener" style="margin-left:6px;color:var(--accent);font-size:10px">
-              ↗ 発行ページ（repo スコープ）
-            </a>
-          </div>
-          <div class="dbm-pat-row">
-            <input type="password" id="debug-memo-pat" placeholder="ghp_xxxxx..." autocomplete="off" />
-            <button type="button" id="dbm-save-pat" class="primary"
-                    style="padding:5px 10px;font-size:12px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer;font-family:var(--font-ui)">
-              保存
-            </button>
-          </div>
-          <div style="font-size:10px;color:var(--text-dim);margin-top:3px">
-            localStorageに保存されます。必要最小限スコープ: <code>public_repo</code>
-          </div>
-        </div>
-
-        <div>
-          <div class="dbm-label">タイトル（任意）</div>
-          <input type="text" id="debug-memo-title" placeholder="例: 検索後にUndoが効かない" maxlength="80" />
-        </div>
-
-        <div>
-          <div class="dbm-label">内容（スクリーンショットは Ctrl+V / Cmd+V でペースト可）</div>
-          <div id="debug-memo-body" contenteditable="true" role="textbox" aria-multiline="true"
-               data-placeholder="バグの再現手順・期待動作・実際の動作などを書いてください..."></div>
-        </div>
-
-        <div id="debug-memo-images"></div>
-
-        <div class="dbm-btns">
-          <button type="button" id="dbm-cancel">キャンセル</button>
-          <button type="button" id="dbm-upload" class="primary">⬆ GitHubにアップロード</button>
-        </div>
-      </div>
-    </div>
-
     <!-- ヘルプダイアログ（マニュアル＋ショートカット統合） -->
     <div
       id="manual-dialog"
@@ -2323,7 +2121,6 @@
         // SEJ連携用: 席種エリアマスタ
         sejMaster: null, // { byCode: { "MMTGPE25021": { disp_nm, control_nm, nte, ... } }, fileName }
         sejVirtualCols: null, // { indices: [i1, i2, ...], keys: ["grp_nm", ...] } 保存時除外する仮想列
-        priceRef: null, // 経路価格スケジュール参照 { meta, colMap, lookup: Map<ticket→row> }
 
         // ズーム
         zoomLevel: 100, // パーセント
@@ -2446,22 +2243,6 @@
         t.dirty = state.dirty;
         t.undoStack = [...state.undoStack];
         t.redoStack = [...state.redoStack];
-        // フィルター・表示状態をタブごとに保存
-        const savedCF = {};
-        for (const k in state.columnFilters) {
-          const f = state.columnFilters[k];
-          savedCF[k] = f.type === 'values'
-            ? { type: 'values', values: new Set(f.values) }
-            : { ...f };
-        }
-        t.columnFilters = savedCF;
-        t.filterVisible = state.filterVisible;
-        t.hiddenRows = new Set(state.hiddenRows);
-        t.hiddenCols = new Set(state.hiddenCols);
-        t.freezeCols = state.freezeCols;
-        t.wrapCells = state.wrapCells;
-        t.wrapRows = new Set(state.wrapRows);
-        t.conditionalHL = state.conditionalHL;
       }
 
       function switchTab(idx) {
@@ -2495,66 +2276,6 @@
         state.dirty = savedDirty;
         state.undoStack = savedUndo;
         state.redoStack = savedRedo;
-        // フィルター・表示状態をタブから復元
-        {
-          const restoredCF = {};
-          for (const k in (t.columnFilters || {})) {
-            const f = t.columnFilters[k];
-            restoredCF[k] = f.type === 'values'
-              ? { type: 'values', values: new Set(f.values) }
-              : { ...f };
-          }
-          state.columnFilters = restoredCF;
-          state.filterVisible = t.filterVisible || false;
-          state.hiddenRows = t.hiddenRows ? new Set(t.hiddenRows) : new Set();
-          state.hiddenCols = t.hiddenCols ? new Set(t.hiddenCols) : new Set();
-          state.freezeCols = t.freezeCols || 0;
-          state.wrapCells = t.wrapCells || false;
-          state.wrapRows = t.wrapRows ? new Set(t.wrapRows) : new Set();
-          state.conditionalHL = t.conditionalHL || false;
-          // filteredIndicesをレンダリングなしで再計算
-          _visibleRowsCache = null;
-          const fkeys = Object.keys(state.columnFilters);
-          if (!fkeys.length) {
-            state.filteredIndices = null;
-            els.filterClear.style.display = 'none';
-            els.filterExport.style.display = 'none';
-          } else {
-            const fi = [];
-            state.data.forEach((row, idx) => {
-              let match = true;
-              for (const k of fkeys) {
-                const ci = parseInt(k);
-                const f = state.columnFilters[k];
-                const val = (ci < row.length ? row[ci] : '') ?? '';
-                if (f.type === 'text' && !val.toLowerCase().includes(f.query.toLowerCase())) { match = false; break; }
-                if (f.type === 'values' && !f.values.has(val)) { match = false; break; }
-                if (f.type === 'range') {
-                  const num = parseFloat(val);
-                  if (isNaN(num) || (f.min !== null && num < f.min) || (f.max !== null && num > f.max)) { match = false; break; }
-                }
-              }
-              if (match) fi.push(idx);
-            });
-            state.filteredIndices = fi;
-            els.filterClear.style.display = '';
-            els.filterExport.style.display = '';
-          }
-          updateHiddenStatus();
-          // フィルタートグルボタン外観を復元
-          const fOn = state.filterVisible;
-          els.filterToggle.style.background = fOn ? '#eff6ff' : '';
-          els.filterToggle.style.borderColor = fOn ? 'var(--accent)' : '';
-          els.filterToggle.style.color = fOn ? 'var(--accent)' : '';
-          els.filterToggle.setAttribute('aria-pressed', String(fOn));
-          els.filterToggle.setAttribute('aria-label', fOn ? 'フィルター行を非表示' : 'フィルター行を表示');
-          // 折り返しボタン外観を復元
-          document.body.classList.toggle('wrap-cells', state.wrapCells);
-          const bw = $('btn-wrap');
-          bw.classList.toggle('active-state', state.wrapCells);
-          bw.setAttribute('aria-pressed', String(state.wrapCells));
-          bw.setAttribute('aria-label', state.wrapCells ? 'セル折り返しをOFFにする' : 'セル折り返しをONにする');
-        }
         applyHeaderMapping();
         if (state.dirty) {
           els.dirty.classList.add("show");
@@ -2764,11 +2485,7 @@
         $("btn-redo").onclick = redo;
         els.filterToggle.onclick = toggleFilter;
         els.filterClear.onclick = clearAllFilters;
-        let _imeComposing = false;
-        let _lastSearched = '';
-        els.search.addEventListener('compositionstart', () => { _imeComposing = true; });
-        els.search.addEventListener('compositionend', () => { _imeComposing = false; execSearch(); });
-        els.search.oninput = debounce(() => { if (!_imeComposing) execSearch(); }, 150);
+        els.search.oninput = debounce(execSearch, 150);
         $("btn-next").onclick = () => moveSearch(1);
         $("btn-prev").onclick = () => moveSearch(-1);
         $("goto-input").onkeydown = (e) => {
@@ -2816,25 +2533,12 @@
             loadSejMasterFile(e.dataTransfer.files[0]);
           }
         });
-        $("btn-price-ref").onclick = togglePriceRef;
-        // ドラッグ&ドロップで価格参照JSONを読込
-        const priceRefBtn = $("btn-price-ref");
-        priceRefBtn.addEventListener("dragover", (e) => { e.preventDefault(); priceRefBtn.classList.add("drag-over"); });
-        priceRefBtn.addEventListener("dragleave", () => priceRefBtn.classList.remove("drag-over"));
-        priceRefBtn.addEventListener("drop", (e) => {
-          e.preventDefault();
-          priceRefBtn.classList.remove("drag-over");
-          if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            loadPriceRefFile(e.dataTransfer.files[0]);
-          }
-        });
         $("btn-vertical-header").onclick = toggleVerticalHeader;
         if (state.verticalHeader) $("btn-vertical-header").classList.add("active-state");
         $("btn-header-mode").onclick = toggleHeaderMode;
         $("btn-new-sheet").onclick = addNewSheet;
         $("btn-reset-view").onclick = resetView;
         $("btn-manual").onclick = showManual;
-        $("btn-debug-memo").onclick = openDebugMemoDialog;
         $("btn-regex").onclick = toggleRegexMode;
         $("man-close").onclick = hideManual;
         $("manual-dialog").onclick = (e) => {
@@ -3079,7 +2783,6 @@
               cur += '"';
               i++;
             } else if (c === '"') inQuote = false;
-            else if (c === '\r') { cur += '\n'; if (next === '\n') i++; }
             else cur += c;
           } else {
             if (c === '"') inQuote = true;
@@ -3138,9 +2841,6 @@
       }
 
       // ===== ヘッダー自動変換（席種エリアマスター対応）=====
-      const DEBUG_MEMO_PAT_KEY    = "tsv-editor-debug-memo-pat";
-      const DEBUG_MEMO_REPO_KEY   = "tsv-editor-debug-memo-repo";
-      const DEBUG_MEMO_BRANCH_KEY = "tsv-editor-debug-memo-branch";
       const HEADER_MAP_STORAGE_KEY = "tsv-editor-header-map";
       const HEADER_COMMENTS_STORAGE_KEY = "tsv-editor-header-comments";
 
@@ -3469,10 +3169,7 @@
           }
           state.sortKeys = [{ col: state.sortCol, asc: state.sortAsc }];
         }
-        // 1行目をヘッダーとして固定し、2行目以降のみソート対象とする
-        const _sortHeader = state.data.length > 1 ? state.data[0] : null;
-        const _sortData = _sortHeader ? state.data.slice(1) : state.data;
-        _sortData.sort((a, b) => {
+        state.data.sort((a, b) => {
           for (const { col: c, asc } of state.sortKeys) {
             const va = a[c] ?? "",
               vb = b[c] ?? "";
@@ -3490,7 +3187,6 @@
           }
           return 0;
         });
-        if (_sortHeader) state.data = [_sortHeader, ..._sortData];
         state.selected = null;
         state.range = null;
         state.anchor = null;
@@ -3499,7 +3195,6 @@
         renderHeader();
         state.forceRender = true;
         renderBody();
-        execSearch();
         const keyDesc = state.sortKeys
           .map((k) => `「${getDisplayHeader(k.col)}」${k.asc ? "▲" : "▼"}`)
           .join(", ");
@@ -3878,7 +3573,7 @@
           // コメントツールチップ（アイコンなし、ホバーで表示）
           const hasComment = !!comment;
           const tooltipHtml = hasComment ? `<div class="th-tooltip visible">${escHtml(comment)}</div>` : `<div class="th-tooltip" data-tooltip-col="${i}"></div>`;
-          html += `<th scope="col" aria-label="${escHtml(displayH)}" style="${w}${freezeLeft}" data-col="${i}" aria-colindex="${i + 2}" class="${active} ${frozen} ${freezeBorder} ${hasComment ? 'has-comment' : ''}" aria-sort="${sortDir}" data-comment-col="${i}">
+          html += `<th scope="col" style="${w}${freezeLeft}" data-col="${i}" aria-colindex="${i + 2}" class="${active} ${frozen} ${freezeBorder} ${hasComment ? 'has-comment' : ''}" aria-sort="${sortDir}" data-comment-col="${i}">
       <div class="th-inner">
         <span class="th-label" title="${escHtml(labelTitle)}">${escHtml(displayH)}</span>
         <div class="th-controls">
@@ -4150,20 +3845,6 @@
           ? state.headers.findIndex(h => h.trim() === "seat_type_area_cd")
           : -1;
 
-        // 価格連携: 参照列インデックスをキャッシュ
-        let priceRefCols = null;
-        if (state.priceRef) {
-          const cm = state.priceRef.colMap;
-          const fi = (name) => name ? state.headers.findIndex(h => h.trim() === name.trim()) : -1;
-          priceRefCols = {
-            ticketIdx: fi(cm.ticket_col),
-            advanceIdx: fi(cm.advance_price_col),
-            dayIdx: fi(cm.day_price_col),
-            upgradeAmountIdx: fi(cm.upgrade_amount_col),
-            upgradeToIdx: fi(cm.upgrade_to_col),
-          };
-        }
-
         for (let vi = start; vi < end; vi++) {
           const i = rows._direct ? vi : rows._indices[vi];
           const row = state.data[i];
@@ -4237,54 +3918,6 @@
                 if (nm) displayVal += `<span style="color:#2563eb;margin-left:6px;font-size:11px">▸ ${escHtml(nm)}</span>`;
               } else {
                 displayVal += `<span style="color:#dc2626;margin-left:6px;font-size:11px">▸ 未登録</span>`;
-              }
-            }
-            // 価格連携: 不一致セルをハイライト
-            if (priceRefCols) {
-              const { ticketIdx, advanceIdx, dayIdx, upgradeAmountIdx, upgradeToIdx } = priceRefCols;
-              if (j === advanceIdx || j === dayIdx || j === upgradeAmountIdx || j === upgradeToIdx) {
-                const ticketName = ticketIdx >= 0 ? (row[ticketIdx] ?? "").trim() : "";
-                const refRow = ticketName ? state.priceRef.lookup.get(ticketName) : null;
-                if (refRow) {
-                  let isMismatch = false, refDisp = "";
-                  if (j === advanceIdx) {
-                    const refVal = refRow.advance_price;
-                    refDisp = refVal != null ? String(refVal) : "販売なし";
-                    const cellNum = Number(cellVal.replace(/[^0-9]/g, ""));
-                    isMismatch = refVal != null
-                      ? (cellVal !== "" && cellNum !== refVal)
-                      : (cellVal !== "" && cellVal !== "―" && cellVal !== "9999999");
-                  } else if (j === dayIdx) {
-                    const refVal = refRow.day_price;
-                    refDisp = refVal != null ? String(refVal) : "販売なし";
-                    const cellNum = Number(cellVal.replace(/[^0-9]/g, ""));
-                    isMismatch = refVal != null
-                      ? (cellVal !== "" && cellNum !== refVal)
-                      : (cellVal !== "" && cellVal !== "―" && cellVal !== "9999999");
-                  } else if (j === upgradeToIdx) {
-                    const upgrades = refRow.upgrades || [];
-                    refDisp = upgrades.length ? upgrades.map(u => u.to).join(" / ") : "なし";
-                    isMismatch = upgrades.length === 0
-                      ? (cellVal !== "" && cellVal !== "―")
-                      : !upgrades.some(u => u.to.trim() === cellVal.trim());
-                  } else if (j === upgradeAmountIdx) {
-                    const upgrades = refRow.upgrades || [];
-                    const toVal = upgradeToIdx >= 0 ? (row[upgradeToIdx] ?? "").trim() : "";
-                    const matched = toVal ? upgrades.find(u => u.to.trim() === toVal) : upgrades[0];
-                    if (matched) {
-                      refDisp = String(matched.amount);
-                      const cellNum = Number(cellVal.replace(/[^0-9]/g, ""));
-                      isMismatch = cellVal !== "" && cellNum !== matched.amount;
-                    } else if (upgrades.length === 0) {
-                      refDisp = "なし";
-                      isMismatch = cellVal !== "" && cellVal !== "―";
-                    }
-                  }
-                  if (isMismatch) {
-                    cls.push("price-ng");
-                    displayVal += `<span style="color:#dc2626;margin-left:5px;font-size:10px" title="参照値: ${escHtml(refDisp)}">▸ 参照:${escHtml(refDisp)}</span>`;
-                  }
-                }
               }
             }
             html += `<td role="gridcell" data-col="${j}" aria-colindex="${j + 2}" ${style ? `style="${style}"` : ""} class="${cls.join(" ")}" aria-selected="${isSelected}">${displayVal}</td>`;
@@ -4891,8 +4524,6 @@
 
       // ===== キーボード =====
       function onKeyDown(e) {
-        // メモダイアログが開いている間はグリッド操作をブロック
-        if ($("debug-memo-dialog")?.classList.contains("show")) return;
         if (e.target.tagName === "INPUT" && e.target.closest("td.editing"))
           return;
         // ダイアログ内でもCtrl+C/Vはセル操作として処理する
@@ -4917,15 +4548,8 @@
 
         if (e.target === els.search) {
           if (e.key === "Enter") {
+            moveSearch(e.shiftKey ? -1 : 1);
             e.preventDefault();
-            if (els.search.value !== _lastSearched) {
-              // クエリが変わっており未検索：即実行（execSearch内でhit[0]へ移動）
-              execSearch();
-              if (e.shiftKey && state.searchHits.length > 1) moveSearch(-1);
-            } else {
-              // 同クエリの繰り返しナビゲート
-              moveSearch(e.shiftKey ? -1 : 1);
-            }
           }
           if (e.key === "Escape") els.search.blur();
           return;
@@ -5517,31 +5141,6 @@
       }
 
       // 単一行のCSV/TSVをクオート対応で分割する（ペースト用）
-      // セル内改行（quoted fields）を正しく扱う汎用パーサー
-      function parseDelimited(text, delim) {
-        const rows = [];
-        let row = [], cur = "", inQuote = false;
-        for (let i = 0; i < text.length; i++) {
-          const c = text[i], next = text[i + 1];
-          if (inQuote) {
-            if (c === '"' && next === '"') { cur += '"'; i++; }
-            else if (c === '"') inQuote = false;
-            else if (c === '\r') { cur += '\n'; if (next === '\n') i++; }
-            else cur += c;
-          } else {
-            if (c === '"') inQuote = true;
-            else if (c === delim) { row.push(cur); cur = ""; }
-            else if (c === "\r" || c === "\n") {
-              if (c === "\r" && next === "\n") i++;
-              row.push(cur); rows.push(row); row = []; cur = "";
-            } else cur += c;
-          }
-        }
-        if (cur || row.length) { row.push(cur); rows.push(row); }
-        while (rows.length > 0 && rows[rows.length - 1].every(c => c === "")) rows.pop();
-        return rows;
-      }
-
       function splitDelimited(line, delim) {
         const fields = [];
         let cur = "",
@@ -5634,11 +5233,19 @@
         let cb;
         try {
           const txt = await navigator.clipboard.readText();
-          if (!txt) return;
-          const delim = txt.includes("\t") ? "\t" : txt.includes(",") ? "," : "\t";
-          const data2d = parseDelimited(txt, delim);
-          if (!data2d.length) return;
-          cb = { data2d, rows: data2d.length, cols: Math.max(...data2d.map(r => r.length)) };
+          const lines = txt.split(/\r?\n/);
+          while (lines.length > 0 && lines[lines.length - 1] === "")
+            lines.pop();
+          if (!lines.length) return;
+          const delim = txt.includes("\t")
+            ? "\t"
+            : txt.includes(",")
+              ? ","
+              : "\t";
+          const data2d = lines.map((l) => splitDelimited(l, delim));
+          // 末尾の全セル空行を除去（コピー時の末尾改行で空行ができる場合の対策）
+          while (data2d.length > 1 && data2d[data2d.length - 1].every(c => c === "")) data2d.pop();
+          cb = { data2d, rows: data2d.length, cols: data2d[0].length };
           state.clipboard = cb;
         } catch {
           if (state.clipboard) {
@@ -5704,7 +5311,6 @@
         }
         markDirty();
         state.forceRender = true;
-        renderHeader();
         renderBody();
         setStatus("ペーストしました");
       }
@@ -5980,7 +5586,6 @@
         state.forceRender = true;
         renderBody();
         setStatus(`${cnt}件を置換しました${scopeNote}`);
-        execSearch();
       }
       function escRe(s) {
         return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -6221,9 +5826,7 @@
                   state.sortCol = col;
                   state.sortAsc = true;
                   state.sortKeys = [{ col, asc: true }];
-                  const _ch1 = state.data.length > 1 ? state.data[0] : null;
-                  const _cd1 = _ch1 ? state.data.slice(1) : state.data;
-                  _cd1.sort((a, b) => {
+                  state.data.sort((a, b) => {
                     const va = a[col] ?? "",
                       vb = b[col] ?? "";
                     if (va === "" && vb === "") return 0;
@@ -6235,7 +5838,6 @@
                       return na - nb;
                     return String(va).localeCompare(String(vb), "ja");
                   });
-                  if (_ch1) state.data = [_ch1, ..._cd1];
                   state.selected = null;
                   state.range = null;
                   state.anchor = null;
@@ -6244,7 +5846,6 @@
                   renderHeader();
                   state.forceRender = true;
                   renderBody();
-                  execSearch();
                   setStatus(`「${getDisplayHeader(col)}」で昇順ソート`);
                 },
               },
@@ -6255,9 +5856,7 @@
                   state.sortCol = col;
                   state.sortAsc = false;
                   state.sortKeys = [{ col, asc: false }];
-                  const _ch2 = state.data.length > 1 ? state.data[0] : null;
-                  const _cd2 = _ch2 ? state.data.slice(1) : state.data;
-                  _cd2.sort((a, b) => {
+                  state.data.sort((a, b) => {
                     const va = a[col] ?? "",
                       vb = b[col] ?? "";
                     if (va === "" && vb === "") return 0;
@@ -6269,7 +5868,6 @@
                       return nb - na;
                     return String(vb).localeCompare(String(va), "ja");
                   });
-                  if (_ch2) state.data = [_ch2, ..._cd2];
                   state.selected = null;
                   state.range = null;
                   state.anchor = null;
@@ -6278,7 +5876,6 @@
                   renderHeader();
                   state.forceRender = true;
                   renderBody();
-                  execSearch();
                   setStatus(`「${getDisplayHeader(col)}」で降順ソート`);
                 },
               },
@@ -6572,15 +6169,12 @@
         state.wrapRows.clear();
         state.regexMode = false;
         state.conditionalHL = false;
-        state.priceRef = null;
         state._dupSet = null;
         state._dupCol = null;
         state.dirty = false;
         document.body.classList.remove("wrap-cells");
         $("btn-wrap").classList.remove("active-state");
         $("btn-wrap").setAttribute("aria-pressed", "false");
-        $("btn-price-ref").classList.remove("active-state");
-        $("btn-price-ref").textContent = "価格連携";
         _visibleRowsCache = null;
         _visibleRowsCacheKey = "";
         lastRenderKey = null;
@@ -6854,7 +6448,6 @@
 
       function execSearch() {
         const q = els.search.value;
-        if (typeof _lastSearched !== 'undefined') _lastSearched = q;
         state.searchHits = [];
         state.searchIdx = -1;
         if (!q) {
@@ -6878,13 +6471,7 @@
         const maxR = scope ? scope.r2 : state.data.length - 1;
         const minC = scope ? scope.c1 : 0;
         const maxC = scope ? scope.c2 : state.headers.length - 1;
-        // フィルター中は可視行のみ検索（非表示行の結果はカーソルが消えるため）
-        const vr = getVisibleRows();
-        const rowsToSearch = vr._direct
-          ? null
-          : vr._indices.filter(r => r >= minR && r <= maxR);
-        const iter = rowsToSearch ?? Array.from({ length: maxR - minR + 1 }, (_, k) => minR + k);
-        for (const r of iter) {
+        for (let r = minR; r <= maxR; r++) {
           for (let c = minC; c <= maxC; c++) {
             const v = safeGet(r, c);
             if (matcher(v)) state.searchHits.push({ row: r, col: c });
@@ -7073,11 +6660,7 @@
           setStatus("有効な行番号を入力してください");
           return;
         }
-        if (n > state.data.length) {
-          setStatus(`⚠ 行 ${n} は範囲外です（全 ${state.data.length} 行）`);
-          return;
-        }
-        const r = n - 1;
+        const r = Math.min(n - 1, state.data.length - 1);
         moveTo(r, state.selected?.col ?? 0);
         state.forceRender = true;
         renderBody();
@@ -7557,52 +7140,32 @@
         reader.readAsText(file, "utf-8");
       }
 
-      function _doSejDisconnect() {
-        // 仮想列を削除（末尾から削ることで他indexに影響しない）
-        if (state.sejVirtualCols && state.sejVirtualCols.indices.length) {
-          const sorted = [...state.sejVirtualCols.indices].sort((a, b) => b - a);
-          for (const vIdx of sorted) {
-            state.headers.splice(vIdx, 1);
-            if (state.displayHeaders) state.displayHeaders.splice(vIdx, 1);
-            state.data.forEach(row => row.splice(vIdx, 1));
-            if (state.columnFilters && state.columnFilters[vIdx]) delete state.columnFilters[vIdx];
-            if (state.colWidths && state.colWidths[vIdx] != null) delete state.colWidths[vIdx];
-          }
-          state.sejVirtualCols = null;
-          applyFilters();
-        }
-        state.sejMaster = null;
-        $("btn-sej-link").classList.remove("active-state");
-        $("btn-sej-link").textContent = "SEJ連携";
-        state.forceRender = true;
-        renderHeader();
-        renderBody();
-        setStatus("SEJ連携を解除しました");
-        _ribSyncToggles();
-      }
-
       function toggleSejLink() {
         if (state.sejMaster) {
           const fn = state.sejMaster.fileName || "(不明)";
-          // confirm()はiframe内でブロックされる場合があるためカスタムモーダルを使用
-          const _ov = document.createElement("div");
-          _ov.className = "modal-overlay";
-          _ov.innerHTML = `<div class="modal-dialog">
-            <div class="modal-title">SEJ連携を解除しますか？</div>
-            <p style="font-size:13px;margin:8px 0 4px">現在のマスタ: <strong>${escHtml(fn)}</strong><br>解除するとマスタデータは破棄されます。</p>
-            <div class="modal-btns">
-              <button id="_sej-cancel" class="btn-default">キャンセル</button>
-              <button id="_sej-ok" class="btn-primary">解除する</button>
-            </div>
-          </div>`;
-          document.body.appendChild(_ov);
-          _ov.querySelector("#_sej-cancel").onclick = () => _ov.remove();
-          _ov.querySelector("#_sej-ok").onclick = () => { _ov.remove(); _doSejDisconnect(); };
-          _ov.onkeydown = (e) => { if (e.key === "Escape") _ov.remove(); };
-          _ov.querySelector("#_sej-cancel").focus();
+          if (!confirm(`SEJ連携を解除しますか？\n\n現在読み込んでいる席種エリアマスタ:\n${fn}\n\n解除するとメモリ上のマスタデータは破棄されます。\n（再度連携するにはマスタファイルを再選択する必要があります）`)) return;
+          // 仮想列を削除（末尾から削ることで他indexに影響しない）
+          if (state.sejVirtualCols && state.sejVirtualCols.indices.length) {
+            const sorted = [...state.sejVirtualCols.indices].sort((a, b) => b - a);
+            for (const vIdx of sorted) {
+              state.headers.splice(vIdx, 1);
+              if (state.displayHeaders) state.displayHeaders.splice(vIdx, 1);
+              state.data.forEach(row => row.splice(vIdx, 1));
+              if (state.columnFilters && state.columnFilters[vIdx]) delete state.columnFilters[vIdx];
+              if (state.colWidths && state.colWidths[vIdx] != null) delete state.colWidths[vIdx];
+            }
+            state.sejVirtualCols = null;
+            applyFilters();
+          }
+          state.sejMaster = null;
+          $("btn-sej-link").classList.remove("active-state");
+          $("btn-sej-link").textContent = "SEJ連携";
+          state.forceRender = true;
+          renderHeader();
+          renderBody();
+          setStatus("SEJ連携を解除しました");
           return;
         }
-        setStatus("SEJマスタファイルを選択してください...");
         const input = document.createElement("input");
         input.type = "file";
         input.accept = ".tsv,.txt,text/plain";
@@ -7626,60 +7189,6 @@
       function isSejData() {
         const hs = state.headers.map(h => h.trim());
         return hs.includes("sej_template_cd") && hs.includes("word1");
-      }
-
-      // ===== 経路価格スケジュール連携 =====
-      function loadPriceRefFile(file) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          try {
-            const json = JSON.parse(reader.result);
-            if (!json.data || !Array.isArray(json.data)) {
-              setStatus("⚠ 参照JSONの形式が不正です（data配列が必要）");
-              return;
-            }
-            const colMap = json.column_map || {};
-            const lookup = new Map();
-            for (const row of json.data) {
-              const key = (row.ticket || "").trim();
-              if (key) lookup.set(key, row);
-            }
-            state.priceRef = { meta: json.meta || {}, colMap, lookup };
-            const cnt = lookup.size;
-            const raceName = json.meta?.race || file.name;
-            $("btn-price-ref").classList.add("active-state");
-            $("btn-price-ref").textContent = `価格連携中 (${cnt})`;
-            state.forceRender = true;
-            renderHeader();
-            renderBody();
-            setStatus(`価格連携: ${raceName} / ${cnt}券種を読み込みました`);
-          } catch (err) {
-            setStatus("⚠ 参照JSON読込失敗: " + err.message);
-          }
-        };
-        reader.readAsText(file, "utf-8");
-      }
-
-      function togglePriceRef() {
-        if (state.priceRef) {
-          const raceName = state.priceRef.meta?.race || "(不明)";
-          if (!confirm(`価格連携を解除しますか？\n\n現在の参照データ:\n${raceName}\n\n解除すると参照データは破棄されます。`)) return;
-          state.priceRef = null;
-          $("btn-price-ref").classList.remove("active-state");
-          $("btn-price-ref").textContent = "価格連携";
-          state.forceRender = true;
-          renderHeader();
-          renderBody();
-          setStatus("価格連携を解除しました");
-          return;
-        }
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = ".json,application/json";
-        input.onchange = () => {
-          if (input.files && input.files[0]) loadPriceRefFile(input.files[0]);
-        };
-        input.click();
       }
 
       // ===== SEJ HTML出力 =====
@@ -7931,17 +7440,7 @@
         }
 
         if (!colMap.length) {
-          const _ov = document.createElement("div");
-          _ov.className = "modal-overlay";
-          _ov.innerHTML = `<div class="modal-dialog">
-            <div class="modal-title">⚠ マスター列が見つかりません</div>
-            <p style="font-size:13px;margin:8px 0 4px">HTML出力に必要な列が見つかりませんでした。<br>「ファイル → マスター読み込み」でマスターファイルを読み込んでください。</p>
-            <div class="modal-btns"><button id="_preview-err-ok" class="btn-primary">閉じる</button></div>
-          </div>`;
-          document.body.appendChild(_ov);
-          _ov.querySelector("#_preview-err-ok").onclick = () => _ov.remove();
-          _ov.onkeydown = (e) => { if (e.key === "Escape") _ov.remove(); };
-          _ov.querySelector("#_preview-err-ok").focus();
+          setStatus("⚠ マスター列が見つかりません");
           return;
         }
 
@@ -8580,33 +8079,13 @@
         const nums = nonEmpty.map(Number).filter((v) => !isNaN(v));
         const unique = new Set(vals).size;
         const sum = nums.reduce((a, b) => a + b, 0);
-        const rows = [
-          ["総数", `${vals.length}件`],
-          ["空白", `${vals.length - nonEmpty.length}件`],
-          ["ユニーク", `${unique}種`],
-        ];
+        let msg = `【${getDisplayHeader(col)}】統計\n`;
+        msg += `総数: ${vals.length}件 / 空白: ${vals.length - nonEmpty.length}件 / ユニーク: ${unique}種\n`;
         if (nums.length > 0) {
-          rows.push(["数値", `${nums.length}件`]);
-          rows.push(["合計", fmt(sum)]);
-          rows.push(["平均", fmt(sum / nums.length)]);
-          rows.push(["最小", fmt(Math.min(...nums))]);
-          rows.push(["最大", fmt(Math.max(...nums))]);
+          msg += `数値: ${nums.length}件 / 合計: ${fmt(sum)} / 平均: ${fmt(sum / nums.length)}\n`;
+          msg += `最小: ${fmt(Math.min(...nums))} / 最大: ${fmt(Math.max(...nums))}`;
         }
-        const tableHtml = rows.map(([k, v]) =>
-          `<tr><td style="padding:3px 10px 3px 0;color:#666;white-space:nowrap">${k}</td><td style="padding:3px 0;font-weight:600">${v}</td></tr>`
-        ).join("");
-        const ov = document.createElement("div");
-        ov.className = "modal-overlay show";
-        ov.innerHTML = `<div class="modal-dialog" style="min-width:220px">
-          <div class="modal-title">【${escHtml(getDisplayHeader(col))}】統計</div>
-          <table style="border-collapse:collapse;font-size:13px;margin:8px 0">${tableHtml}</table>
-          <div class="modal-btns"><button id="stats-ok" class="btn-primary">閉じる</button></div>
-        </div>`;
-        document.body.appendChild(ov);
-        const close = () => { ov.remove(); };
-        ov.querySelector("#stats-ok").onclick = close;
-        ov.onkeydown = (e) => { if (e.key === "Escape") close(); };
-        ov.querySelector("#stats-ok").focus();
+        alert(msg);
       }
 
       // ===== 条件付きハイライト =====
@@ -8648,292 +8127,23 @@
           }
         });
       }
-
-      // ===== デバッグメモ機能 =====
-
-      // PAT helpers
-      function dbmGetPat() {
-        try { return atob(localStorage.getItem(DEBUG_MEMO_PAT_KEY) || ""); } catch { return ""; }
-      }
-      function dbmSavePat(pat) {
-        localStorage.setItem(DEBUG_MEMO_PAT_KEY, btoa(pat));
-      }
-      function dbmGetRepo() {
-        return localStorage.getItem(DEBUG_MEMO_REPO_KEY) || "shunjapanes/main";
-      }
-      function dbmGetBranch() {
-        return localStorage.getItem(DEBUG_MEMO_BRANCH_KEY) || "main";
-      }
-
-      // ダイアログ開く
-      function openDebugMemoDialog() {
-        const dlg = $("debug-memo-dialog");
-        const patSection = $("dbm-pat-section");
-        const pat = dbmGetPat();
-        patSection.style.display = pat ? "none" : "";
-
-        // 本文・タイトルリセット
-        $("debug-memo-title").value = "";
-        const body = $("debug-memo-body");
-        body.innerHTML = "";
-        $("debug-memo-images").innerHTML = "";
-        _dbmImages = [];
-
-        dlg.classList.add("show");
-        body.focus();
-
-        // 閉じるハンドラー
-        dlg.onkeydown = (e) => { if (e.key === "Escape") closeDebugMemoDialog(); };
-        $("dbm-cancel").onclick = closeDebugMemoDialog;
-
-        // PAT保存
-        $("dbm-save-pat").onclick = async () => {
-          const val = $("debug-memo-pat").value.trim();
-          if (!val) return;
-          $("dbm-save-pat").disabled = true;
-          $("dbm-save-pat").textContent = "確認中...";
-          const ok = await dbmValidatePat(val);
-          $("dbm-save-pat").disabled = false;
-          $("dbm-save-pat").textContent = "保存";
-          if (ok) {
-            dbmSavePat(val);
-            patSection.style.display = "none";
-            setStatus("✓ GitHub PATを保存しました");
-          } else {
-            setStatus("⚠ PATが無効か権限が足りません（repo スコープが必要）");
-          }
-        };
-
-        // 画像ペーストハンドラー
-        body.addEventListener("paste", dbmHandlePaste, { once: false });
-
-        // アップロードボタン
-        $("dbm-upload").onclick = dbmUpload;
-      }
-
-      function closeDebugMemoDialog() {
-        $("debug-memo-dialog").classList.remove("show");
-        $("debug-memo-body").removeEventListener("paste", dbmHandlePaste);
-      }
-
-      let _dbmImages = []; // [{ dataUrl, type }]
-
-      function dbmHandlePaste(e) {
-        const items = e.clipboardData?.items || [];
-        let hasImage = false;
-        for (const item of items) {
-          if (item.type.startsWith("image/")) {
-            hasImage = true;
-            e.preventDefault();
-            const blob = item.getAsFile();
-            const reader = new FileReader();
-            reader.onload = () => {
-              _dbmImages.push({ dataUrl: reader.result, type: item.type });
-              dbmRenderImagePreviews();
-            };
-            reader.readAsDataURL(blob);
-          }
-        }
-        // テキストペーストは通常通り（preventDefault しない）
-        _ = hasImage;
-      }
-
-      function dbmRenderImagePreviews() {
-        const container = $("debug-memo-images");
-        container.innerHTML = "";
-        _dbmImages.forEach((img, i) => {
-          const wrap = document.createElement("div");
-          wrap.className = "dbm-img-thumb";
-          const im = document.createElement("img");
-          im.src = img.dataUrl;
-          im.alt = `screenshot ${i + 1}`;
-          const del = document.createElement("button");
-          del.className = "dbm-img-del";
-          del.textContent = "✕";
-          del.title = "削除";
-          del.onclick = () => {
-            _dbmImages.splice(i, 1);
-            dbmRenderImagePreviews();
-          };
-          wrap.appendChild(im);
-          wrap.appendChild(del);
-          container.appendChild(wrap);
-        });
-      }
-
-      async function dbmValidatePat(pat) {
-        try {
-          const r = await fetch("https://api.github.com/user", {
-            headers: { Authorization: `Bearer ${pat}`, "X-GitHub-Api-Version": "2022-11-28" }
-          });
-          return r.ok;
-        } catch { return false; }
-      }
-
-      async function dbmGitHubPut(pat, repo, branch, path, message, base64Content) {
-        // 既存ファイルのSHAを取得（なければ新規）
-        let sha;
-        try {
-          const r = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
-            headers: { Authorization: `Bearer ${pat}`, "X-GitHub-Api-Version": "2022-11-28" }
-          });
-          if (r.ok) { const d = await r.json(); sha = d.sha; }
-        } catch {}
-        const body = { message, content: base64Content, branch };
-        if (sha) body.sha = sha;
-        const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${pat}`,
-            "Content-Type": "application/json",
-            "X-GitHub-Api-Version": "2022-11-28",
-          },
-          body: JSON.stringify(body),
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.message || `HTTP ${res.status}`);
-        }
-        return res;
-      }
-
-      async function dbmUpload() {
-        const btn = $("dbm-upload");
-        const pat = dbmGetPat();
-        if (!pat) {
-          $("dbm-pat-section").style.display = "";
-          $("debug-memo-pat").focus();
-          return;
-        }
-        const title = $("debug-memo-title").value.trim() || "デバッグメモ";
-        const bodyEl = $("debug-memo-body");
-        const bodyText = bodyEl.innerText.trim();
-        if (!bodyText && _dbmImages.length === 0) {
-          setStatus("⚠ 内容を入力してください");
-          return;
-        }
-
-        btn.disabled = true;
-        btn.textContent = "アップロード中...";
-
-        const repo = dbmGetRepo();
-        const branch = dbmGetBranch();
-        const now = new Date();
-        const ts = [
-          now.getFullYear(),
-          String(now.getMonth() + 1).padStart(2, "0"),
-          String(now.getDate()).padStart(2, "0"),
-          "-",
-          String(now.getHours()).padStart(2, "0"),
-          String(now.getMinutes()).padStart(2, "0"),
-          String(now.getSeconds()).padStart(2, "0"),
-        ].join("").replace("-", "-");
-        const slug = title.replace(/[^\w぀-鿿]/g, "-").replace(/-+/g, "-").slice(0, 40);
-        const memoPath = `debug-memos/${ts}_${slug}.md`;
-
-        // 画像を先にアップロード
-        const imageRefs = [];
-        for (let i = 0; i < _dbmImages.length; i++) {
-          const img = _dbmImages[i];
-          const ext = img.type === "image/png" ? "png" : "jpg";
-          const imgPath = `debug-memos/images/${ts}_${i + 1}.${ext}`;
-          const base64 = img.dataUrl.split(",")[1];
-          try {
-            await dbmGitHubPut(pat, repo, branch, imgPath, `debug memo image: ${ts}`, base64);
-            imageRefs.push(`![screenshot ${i + 1}](images/${ts}_${i + 1}.${ext})`);
-          } catch (e) {
-            btn.disabled = false;
-            btn.textContent = "⬆ GitHubにアップロード";
-            setStatus(`⚠ 画像アップロード失敗: ${e.message}`);
-            return;
-          }
-        }
-
-        // Markdownファイルを生成
-        const dateStr = now.toLocaleString("ja-JP");
-        let md = `# ${title}\n\n`;
-        md += `- 日時: ${dateStr}\n`;
-        md += `- URL: ${location.href}\n\n`;
-        md += `## 内容\n\n${bodyText || "（内容なし）"}\n`;
-        if (imageRefs.length) {
-          md += `\n## スクリーンショット\n\n${imageRefs.join("\n")}\n`;
-        }
-
-        const mdBase64 = btoa(unescape(encodeURIComponent(md)));
-        try {
-          await dbmGitHubPut(pat, repo, branch, memoPath, `debug memo: ${title}`, mdBase64);
-          closeDebugMemoDialog();
-          setStatus(`✓ メモをアップロードしました → ${memoPath}`);
-        } catch (e) {
-          setStatus(`⚠ メモのアップロード失敗: ${e.message}`);
-        } finally {
-          btn.disabled = false;
-          btn.textContent = "⬆ GitHubにアップロード";
-        }
-      }
-
     </script>
 
     <!-- ===== RIBBON BRIDGE PATCH ===== -->
+    <style>
+      /* Hide native toolbar/statusbar/tabbar when running inside ribbon wrapper */
+      #toolbar, #search-area, #tab-bar, #statusbar {
+        display: none !important;
+      }
+      /* Main area fills full height when toolbar/statusbar are hidden */
+      body { height: 100vh !important; }
+    </style>
     <script>
     (function() {
       // Only activate bridge when inside an iframe
       if (window.self === window.top) return;
 
-      // Hide native toolbar/statusbar/tabbar only when inside ribbon wrapper
-      var bridgeStyle = document.createElement('style');
-      bridgeStyle.textContent = '#toolbar, #search-area, #tab-bar, #statusbar { display: none !important; }';
-      document.head.appendChild(bridgeStyle);
-
       // ---- postMessage → editor function dispatch ----
-      // Helpers for ribbon bridge
-      function _ribGetCurCol() {
-        if (typeof state === 'undefined') return -1;
-        if (state.selected && typeof state.selected.col === 'number') return state.selected.col;
-        if (state.range && typeof state.range.c1 === 'number') return Math.min(state.range.c1, state.range.c2);
-        if (typeof state.selectedCol === 'number') return state.selectedCol;
-        return -1;
-      }
-      function _ribRequireSel(actionName) {
-        if (typeof state === 'undefined' || !state.selected) {
-          if (typeof setStatus === 'function') {
-            setStatus('セルを選択してから「' + actionName + '」を実行してください');
-          }
-          return false;
-        }
-        return true;
-      }
-      function _ribExport(format) {
-        if (typeof state === 'undefined') return;
-        var d = format === 'tsv' ? '\t' : ',';
-        var esc = function(v) {
-          var s = String(v == null ? '' : v);
-          return s.indexOf(d) >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0 || s.indexOf('\r') >= 0
-            ? '"' + s.replace(/"/g, '""') + '"'
-            : s;
-        };
-        var rows = (state.filteredIndices && state.filteredIndices.length)
-          ? state.filteredIndices
-          : state.data.map(function(_, i) { return i; });
-        var dataLines = rows.map(function(i) { return (state.data[i] || []).map(esc).join(d); }).join('\n');
-        var txt = state.headerMode === 'numbered'
-          ? dataLines
-          : (state.headers || []).map(esc).join(d) + '\n' + dataLines;
-        var bom = state.encoding === 'utf8bom' ? '\uFEFF' : '';
-        var blob = new Blob([bom + txt], { type: 'text/plain' });
-        var baseName = (state.fileName || 'data').replace(/\.[^.]+$/, '');
-        var fileName = baseName + '.' + format;
-        var a = document.createElement('a');
-        var url = URL.createObjectURL(blob);
-        a.href = url;
-        a.download = fileName;
-        a.click();
-        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-        if (typeof setStatus === 'function') {
-          setStatus(rows.length + '行を ' + format.toUpperCase() + ' で出力しました');
-        }
-      }
-
       window.addEventListener('message', function(e) {
         if (e.source !== window.parent) return;
         var msg = e.data || {};
@@ -8941,71 +8151,12 @@
         var payload = msg.payload;
 
         var dispatch = {
-          'new':             function() { addNewSheet(); },
-          'open':            function() { if (els && els.fileInput) els.fileInput.click(); },
-          'openContent':     function() {
-            if (!payload || typeof payload.content !== 'string') return;
-            var fname = payload.filename || 'data.tsv';
-            var doLoad = function() {
-              saveCurrentTab();
-              state.fileName = fname;
-              state.delimiter = detectDelimiter(payload.content, fname);
-              parseData(payload.content);
-              clearAutoDropColumns(); applyHeaderMapping();
-              // 新規ファイルロード時はビュー状態をリセット
-              state.columnFilters = {};
-              state.filteredIndices = null;
-              state.filterVisible = false;
-              state.hiddenRows = new Set();
-              state.hiddenCols = new Set();
-              state.freezeCols = 0;
-              state.wrapCells = false;
-              state.wrapRows.clear();
-              state.conditionalHL = false;
-              if (state.priceRef) {
-                state.priceRef = null;
-                $('btn-price-ref').classList.remove('active-state');
-                $('btn-price-ref').textContent = '価格連携';
-              }
-              _visibleRowsCache = null;
-              els.filterClear.style.display = 'none';
-              els.filterExport.style.display = 'none';
-              els.filterToggle.style.background = '';
-              els.filterToggle.style.borderColor = '';
-              els.filterToggle.style.color = '';
-              els.filterToggle.setAttribute('aria-pressed', 'false');
-              document.body.classList.remove('wrap-cells');
-              var bwReset = $('btn-wrap');
-              bwReset.classList.remove('active-state');
-              bwReset.setAttribute('aria-pressed', 'false');
-              var tab = {
-                fileName: fname, headers: state.headers, data: state.data,
-                delimiter: state.delimiter, colWidths: {}, sortCol: -1, sortAsc: true,
-                sortKeys: [], headerMode: state.headerMode, dirty: false,
-                _rawText: payload.content
-              };
-              var cur = state.tabs[state.activeTab];
-              if (cur && cur._isBlankSheet === true && !cur.dirty) {
-                state.tabs[state.activeTab] = tab;
-              } else {
-                state.tabs.push(tab);
-                state.activeTab = state.tabs.length - 1;
-              }
-              autoFitAllColumnsQuiet();
-              state.tabs[state.activeTab].colWidths = Object.assign({}, state.colWidths);
-              renderHeader(); state.forceRender = true; renderBody();
-              showTable(); markClean();
-              if (typeof addRecentFile === 'function') addRecentFile(fname, '');
-              setTimeout(_ribSendTabs, 100);
-              setStatus('ロード完了: ' + state.data.length + '行 × ' + state.headers.length + '列');
-            };
-            if (state.dirty) showReloadDialog(doLoad);
-            else doLoad();
-          },
+          'new':             function() { resetState(); },
+          'open':            function() { var el = document.getElementById('open-input'); if(el) el.click(); },
           'save':            function() { saveFile(); },
-          'saveAs':          function() { saveFile(); },
-          'exportTsv':       function() { _ribExport('tsv'); },
-          'exportCsv':       function() { _ribExport('csv'); },
+          'saveAs':          function() { saveFile(); }, // saveFile handles save-as dialog
+          'exportTsv':       function() { exportFiltered('tsv'); },
+          'exportCsv':       function() { exportFiltered('csv'); },
           'exportHtml':      function() { exportHtmlPreview(); },
           'recentMenu':      function() { openRecentMenu(); },
           'addSheet':        function() { addNewSheet(); },
@@ -9014,235 +8165,107 @@
           'cut':             function() { cutToClipboard(); },
           'copy':            function() { copyToClipboard(); },
           'paste':           function() { pasteFromClipboard(); },
-          'toggleFilter':    function() { toggleFilter(); _ribSyncToggles(); },
-          'sortAsc':         function() {
-            var col = _ribGetCurCol();
-            if (col < 0) { setStatus('ソートする列のセルを選択してください'); return; }
-            if (!Array.isArray(state.sortKeys)) state.sortKeys = [];
-            state.sortCol = col; state.sortAsc = false;
-            sortByColumn(col);
-          },
-          'sortDesc':        function() {
-            var col = _ribGetCurCol();
-            if (col < 0) { setStatus('ソートする列のセルを選択してください'); return; }
-            if (!Array.isArray(state.sortKeys)) state.sortKeys = [];
-            state.sortCol = col; state.sortAsc = true;
-            sortByColumn(col);
-          },
+          'toggleFilter':    function() { toggleFilter(); },
+          'sortAsc':         function() { if(typeof state !== 'undefined') sortByColumn(state.curCol); },
+          'sortDesc':        function() { if(typeof state !== 'undefined') sortByColumn(state.curCol, false, true); },
           'autoFit':         function() { autoFitAllColumns(); },
-          'insertRowAbove':  function() {
-            if (!_ribRequireSel('上に行挿入')) return;
-            var r = state.selected.row;
-            saveUndo();
-            state.data.splice(r, 0, new Array(state.headers.length).fill(''));
-            markDirty(); applyFilters(); state.forceRender = true; renderBody();
-            moveTo(r, state.selected.col);
-            setStatus('行 ' + (r + 1) + ' を挿入しました');
-          },
+          'insertRowAbove':  function() { onKeyDown({ key: 'ArrowUp',    altKey: true, shiftKey: true, ctrlKey: false, metaKey: false, preventDefault: function(){} }); },
           'insertRowBelow':  function() { addRowBelow(); },
-          'insertColLeft':   function() {
-            if (!_ribRequireSel('左に列挿入')) return;
-            var c = state.selected.col;
-            saveUndo();
-            state.headers.splice(c, 0, '列' + (state.headers.length + 1));
-            state.data.forEach(function(r) { r.splice(c, 0, ''); });
-            shiftColIndices(c, 1);
-            markDirty(); renderHeader(); state.forceRender = true; renderBody();
-            moveTo(state.selected.row, c);
-            setStatus('列 ' + (c + 1) + ' を左に挿入しました');
-          },
-          'insertColRight':  function() {
-            if (!_ribRequireSel('右に列挿入')) return;
-            var c = state.selected.col + 1;
-            saveUndo();
-            state.headers.splice(c, 0, '列' + (state.headers.length + 1));
-            state.data.forEach(function(r) { r.splice(c, 0, ''); });
-            shiftColIndices(c, 1);
-            markDirty(); renderHeader(); state.forceRender = true; renderBody();
-            moveTo(state.selected.row, c);
-            setStatus('列 ' + (c + 1) + ' を右に挿入しました');
-          },
-          'deleteRows':      function() {
-            if (!state.range && !state.selected) { setStatus('削除する行を選択してください'); return; }
-            deleteSelectedRows();
-          },
-          'deleteCols':      function() {
-            if (!state.range && !state.selected) { setStatus('削除する列を選択してください'); return; }
-            deleteSelectedCols();
-          },
+          'insertColLeft':   function() { onKeyDown({ key: 'ArrowLeft',  altKey: true, shiftKey: true, ctrlKey: false, metaKey: false, preventDefault: function(){} }); },
+          'insertColRight':  function() { onKeyDown({ key: 'ArrowRight', altKey: true, shiftKey: true, ctrlKey: false, metaKey: false, preventDefault: function(){} }); },
+          'deleteRows':      function() { deleteSelectedRows(); },
+          'deleteCols':      function() { deleteSelectedCols(); },
           'deleteEmptyRows': function() { deleteEmptyRows(); },
           'deleteDuplicates':function() { deleteDuplicates(); },
           'trimCells':       function() { trimAllCells(); },
-          'moveRowUp':       function() { if (!_ribRequireSel('行を上に移動')) return; moveRowUp(); },
-          'moveRowDown':     function() { if (!_ribRequireSel('行を下に移動')) return; moveRowDown(); },
-          'duplicateRow':    function() { if (!_ribRequireSel('行を複製')) return; duplicateRow(); },
-          'toggleVertHeader':function() { toggleVerticalHeader(); _ribSyncToggles(); },
-          'toggleWrap':      function() { toggleWrapCells(); _ribSyncToggles(); },
-          'toggleFreeze':    function() {
-            if (!_ribRequireSel('列固定')) return;
-            toggleFreezeColumn(); _ribSyncToggles();
-          },
+          'moveRowUp':       function() { moveRowUp(); },
+          'moveRowDown':     function() { moveRowDown(); },
+          'duplicateRow':    function() { duplicateRow(); },
+          'toggleVertHeader':function() { toggleVerticalHeader(); },
+          'toggleWrap':      function() { toggleWrapCells(); },
+          'toggleFreeze':    function() { toggleFreezeColumn(); },
           'cycleRowHeight':  function() { cycleRowHeight(); },
-          'toggleFitText':   function() { toggleFitText(); _ribSyncToggles(); },
-          'toggleCondHL':    function() { toggleConditionalHL(); _ribSyncToggles(); },
+          'toggleFitText':   function() { toggleFitText(); },
+          'toggleCondHL':    function() { toggleConditionalHL(); },
           'dupHighlight':    function() { openDupHlDialog(); },
-          'resetView':       function() { resetView(); window.parent.postMessage({ type: 'clearSearch' }, '*'); _ribSyncToggles(); },
-          'loadSejMaster':   function() {
-            var inp = document.createElement('input');
-            inp.type = 'file'; inp.accept = '.tsv,.txt,text/plain';
-            inp.onchange = function() { if (inp.files && inp.files[0]) loadSejMasterFile(inp.files[0]); };
-            inp.click();
-          },
+          'resetView':       function() { resetView(); },
+          'loadSejMaster':   function() { var el = document.getElementById('sej-master-input'); if(el) el.click(); },
           'toggleSej':       function() { toggleSejLink(); },
           'htmlPreview':     function() { exportHtmlPreview(); },
-          'colStats':        function() {
-            var col = _ribGetCurCol();
-            if (col < 0) {
-              setStatus('統計を見る列のセルを選択してください');
-              return;
-            }
-            try {
-              showColStats(col);
-            } catch(e) {
-              setStatus('列統計の表示に失敗しました: ' + e.message);
-              console.error('[colStats]', e);
-            }
-          },
+          'colStats':        function() { if(typeof state !== 'undefined') showColStats(state.curCol); },
           'dictEditor':      function() { openDictEditor(); },
           'showHelp':        function() { showManual(); },
-          'debugMemo':       function() { openDebugMemoDialog(); },
-          'switchTab':       function() { if(typeof payload === 'number') { switchTab(payload); execSearch(); } },
+          'switchTab':       function() { if(typeof payload === 'number') switchTab(payload); },
           'closeTab':        function() { if(typeof payload === 'number') closeTab(payload); },
           'gotoRow':         function() { if(payload) gotoRow(payload); },
           'search':          function() {
-            els.search.value = payload != null ? payload : '';
-            execSearch();
+            var inp = document.getElementById('search-input');
+            if (inp && payload) {
+              inp.value = payload;
+              execSearch();
+            }
           },
           'searchNext':      function() { moveSearch(1); },
           'searchPrev':      function() { moveSearch(-1); },
-          'clearSearch':     function() { els.search.value = ''; execSearch(); window.parent.postMessage({ type: 'clearSearch' }, '*'); },
+          'clearSearch':     function() {
+            var inp = document.getElementById('search-input');
+            if (inp) { inp.value = ''; execSearch(); }
+          },
           'replaceOne':      function() {
-            var repFind = document.getElementById('replace-find');
-            var repWith = document.getElementById('replace-with');
-            if (repFind) repFind.value = (els && els.search) ? els.search.value : '';
-            if (repWith && payload !== undefined) repWith.value = payload;
-            replaceOne();
+            var inp = document.getElementById('replace-input');
+            if (inp && payload !== undefined) { inp.value = payload; replaceOne(); }
           },
           'replaceAll':      function() {
-            var repFind = document.getElementById('replace-find');
-            var repWith = document.getElementById('replace-with');
-            if (repFind) repFind.value = (els && els.search) ? els.search.value : '';
-            if (repWith && payload !== undefined) repWith.value = payload;
-            replaceAll();
+            var inp = document.getElementById('replace-input');
+            if (inp && payload !== undefined) { inp.value = payload; replaceAll(); }
           },
         };
 
         if (dispatch[action]) {
           try { dispatch[action](); } catch(err) { console.warn('[bridge]', action, err); }
-          // Sync tab state after actions that change tab list or dirty state
-          if (action === 'closeTab' || action === 'new' || action === 'addSheet' ||
-              action === 'switchTab' || action === 'save' || action === 'open') {
-            setTimeout(_ribSendTabs, 100);
-          }
-          // Sync toggle states after tab switch / new sheet (view state resets)
-          if (action === 'switchTab' || action === 'new' || action === 'addSheet' || action === 'openContent') {
-            setTimeout(_ribSyncToggles, 120);
-          }
         }
       });
 
-
-      // ---- Move #recent-menu out of hidden #toolbar so it can show ----
-      (function() {
-        var menu = document.getElementById('recent-menu');
-        if (menu && menu.parentElement && menu.parentElement.id === 'toolbar') {
-          menu.style.position = 'fixed';
-          menu.style.top = '4px';
-          menu.style.left = '8px';
-          document.body.appendChild(menu);
-        }
-      })();
-
-      // ---- MutationObserver: sync #status-main to parent ----
-      (function() {
-        var statusEl = document.getElementById('status-main');
-        if (statusEl) {
-          new MutationObserver(function() {
-            var txt = statusEl.textContent || '';
-            if (txt === 'Ready') txt = '準備完了';
-            window.parent.postMessage({ type: 'status', text: txt }, '*');
-          }).observe(statusEl, { childList: true, subtree: true, characterData: true });
-        }
-      })();
-
-      // ---- MutationObserver: sync #search-count to parent ----
-      (function() {
-        var countEl = document.getElementById('search-count');
-        if (countEl) {
-          new MutationObserver(function() {
-            window.parent.postMessage({ type: 'searchCount', count: countEl.textContent || '' }, '*');
-          }).observe(countEl, { childList: true, subtree: true, characterData: true });
-        }
-      })();
-
-      // ---- MutationObserver: sync status-pos to parent ----
-      (function() {
-        var posEl = document.getElementById('status-pos');
-        if (posEl) {
-          new MutationObserver(function() {
-            window.parent.postMessage({ type: 'position', position: posEl.textContent || '' }, '*');
-          }).observe(posEl, { childList: true, subtree: true, characterData: true });
-        }
-        var statsEl = document.getElementById('status-stats');
-        if (statsEl) {
-          new MutationObserver(function() {
-            window.parent.postMessage({ type: 'stats', stats: statsEl.textContent || '' }, '*');
-          }).observe(statsEl, { childList: true, subtree: true, characterData: true });
-        }
-      })();
-
-      // ---- MutationObserver: sync tab state to parent whenever #tab-bar changes ----
-      function _ribSendTabs() {
-        if (typeof state === 'undefined' || !Array.isArray(state.tabs)) return;
-        var tabData = state.tabs.map(function(t) {
-          return { name: t.fileName || t.name || 'Sheet', dirty: !!t.dirty };
-        });
-        window.parent.postMessage({ type: 'tabs', tabs: tabData, activeTab: state.activeTab }, '*');
+      // ---- Proxy setStatus → postMessage to parent ----
+      var _origSetStatus = window.setStatus;
+      if (typeof _origSetStatus === 'function') {
+        window.setStatus = function(msg) {
+          _origSetStatus(msg);
+          window.parent.postMessage({ type: 'status', text: msg }, '*');
+        };
       }
-      function _ribSyncToggles() {
-        if (typeof state === 'undefined') return;
-        window.parent.postMessage({
-          type: 'stateSync',
-          filterActive: !!(state.filterVisible),
-          wrapActive: !!(state.wrapCells),
-          verticalHeaderActive: !!(state.verticalHeader),
-          condHLActive: !!(state.conditionalHL),
-          fitTextActive: !!(state.fitText),
-          freezeActive: !!(state.freezeCols > 0),
-        }, '*');
+
+      // ---- Proxy updateStatusPos → postMessage position/stats ----
+      var _origUpdateStatusPos = window.updateStatusPos;
+      if (typeof _origUpdateStatusPos === 'function') {
+        window.updateStatusPos = function() {
+          _origUpdateStatusPos();
+          if (typeof state !== 'undefined') {
+            var r = state.curRow, c = state.curCol;
+            var pos = (r >= 0 && c >= 0) ? ('R' + (r + 1) + ' C' + (c + 1)) : '';
+            window.parent.postMessage({ type: 'position', position: pos }, '*');
+          }
+        };
       }
-      (function() {
-        var tabBar = document.getElementById('tab-bar');
-        if (tabBar) {
-          new MutationObserver(_ribSendTabs).observe(tabBar, { childList: true, subtree: true, characterData: true });
-        }
-      })();
 
-      // ---- Redirect Ctrl+F to parent SearchBar ----
-      document.addEventListener('keydown', function(e) {
-        var cmd = e.ctrlKey || e.metaKey;
-        if (cmd && !e.shiftKey && !e.altKey && (e.key === 'f' || e.key === 'F')) {
-          e.preventDefault();
-          e.stopPropagation();
-          window.parent.postMessage({ type: 'focusSearch' }, '*');
-        }
-      }, true);
+      // ---- Proxy renderTabBar → postMessage tab state ----
+      var _origRenderTabBar = window.renderTabBar;
+      if (typeof _origRenderTabBar === 'function') {
+        window.renderTabBar = function() {
+          _origRenderTabBar();
+          if (typeof state !== 'undefined' && Array.isArray(state.tabs)) {
+            var tabData = state.tabs.map(function(t) {
+              return { name: t.name || 'Sheet', dirty: !!t.dirty };
+            });
+            window.parent.postMessage({ type: 'tabs', tabs: tabData, activeTab: state.activeTab }, '*');
+          }
+        };
+      }
 
-      // ---- Send initial state after load ----
+      // ---- Send initial tab state after load ----
       window.addEventListener('load', function() {
         setTimeout(function() {
-          _ribSendTabs();
-          _ribSyncToggles();
+          if (typeof renderTabBar === 'function') renderTabBar();
           if (typeof setStatus === 'function') setStatus('準備完了');
         }, 300);
       });
