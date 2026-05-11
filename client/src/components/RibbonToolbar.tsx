@@ -6,16 +6,23 @@ import {
   MoveUp, MoveDown, CopyPlus, AlignLeft, WrapText, PanelLeft, AlignVerticalJustifyCenter,
   Shrink, Highlighter, Layers, RefreshCw,
   Database, Link, Globe, BarChart2, BookOpen, HelpCircle, Eraser,
-  ArrowLeftToLine, ArrowRightToLine
+  ArrowLeftToLine, ArrowRightToLine, Search, Bug
 } from 'lucide-react'
 import RibbonGroup from './RibbonGroup'
 import RibbonButton from './RibbonButton'
 import { send } from '../lib/bridge'
+import type { ToggleStates } from '../App'
 
 const TABS = ['ファイル', 'ホーム', 'データ', '表示', 'ツール'] as const
 type Tab = typeof TABS[number]
 
-export default function RibbonToolbar() {
+interface Props {
+  onFocusSearch?: () => void
+  onOpenFile?: () => void
+  toggleStates?: ToggleStates
+}
+
+export default function RibbonToolbar({ onFocusSearch, onOpenFile, toggleStates }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('ホーム')
 
   return (
@@ -39,10 +46,10 @@ export default function RibbonToolbar() {
 
       {/* Ribbon content */}
       <div className="flex flex-row items-stretch h-[72px] gap-0 overflow-x-auto overflow-y-hidden">
-        {activeTab === 'ファイル' && <FileTab />}
-        {activeTab === 'ホーム' && <HomeTab />}
+        {activeTab === 'ファイル' && <FileTab onOpenFile={onOpenFile} />}
+        {activeTab === 'ホーム' && <HomeTab onFocusSearch={onFocusSearch} toggleStates={toggleStates} />}
         {activeTab === 'データ' && <DataTab />}
-        {activeTab === '表示' && <ViewTab />}
+        {activeTab === '表示' && <ViewTab toggleStates={toggleStates} />}
         {activeTab === 'ツール' && <ToolsTab />}
       </div>
     </div>
@@ -53,12 +60,12 @@ function Divider() {
   return <div className="w-px bg-gray-300 self-stretch my-1 mx-0.5 flex-shrink-0" />
 }
 
-function FileTab() {
+function FileTab({ onOpenFile }: { onOpenFile?: () => void }) {
   return (
     <>
       <RibbonGroup label="新規・開く">
         <RibbonButton icon={FilePlus} label="新規" onClick={() => send('new')} />
-        <RibbonButton icon={FolderOpen} label="開く" onClick={() => send('open')} />
+        <RibbonButton icon={FolderOpen} label="開く" onClick={() => onOpenFile ? onOpenFile() : send('open')} />
         <RibbonButton icon={PlusSquare} label="シート追加" onClick={() => send('addSheet')} />
       </RibbonGroup>
       <Divider />
@@ -80,7 +87,7 @@ function FileTab() {
   )
 }
 
-function HomeTab() {
+function HomeTab({ onFocusSearch, toggleStates }: { onFocusSearch?: () => void; toggleStates?: ToggleStates }) {
   return (
     <>
       <RibbonGroup label="元に戻す">
@@ -95,13 +102,17 @@ function HomeTab() {
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="フィルター・並べ替え">
-        <RibbonButton icon={Filter} label="フィルター" onClick={() => send('toggleFilter')} title="フィルター切替 (Ctrl+Shift+F)" />
+        <RibbonButton icon={Filter} label="フィルター" onClick={() => send('toggleFilter')} title="フィルター行の表示切替" active={toggleStates?.filterActive} />
         <RibbonButton icon={ArrowUpAZ} label="昇順" onClick={() => send('sortAsc')} title="昇順ソート" />
         <RibbonButton icon={ArrowDownAZ} label="降順" onClick={() => send('sortDesc')} title="降順ソート" />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="セル">
-        <RibbonButton icon={ALargeSmall} label="列幅自動調整" onClick={() => send('autoFit')} title="全列幅を自動調整 (Ctrl+Shift+U)" />
+        <RibbonButton icon={ALargeSmall} label="列幅自動調整" onClick={() => send('autoFit')} title="全列幅を自動調整" />
+      </RibbonGroup>
+      <Divider />
+      <RibbonGroup label="検索">
+        <RibbonButton icon={Search} label="検索欄へ" onClick={() => onFocusSearch?.()} title="検索入力欄にフォーカス (Ctrl+F)" />
       </RibbonGroup>
     </>
   )
@@ -112,7 +123,7 @@ function DataTab() {
     <>
       <RibbonGroup label="行の挿入">
         <RibbonButton icon={ArrowUpFromLine} label="上に行挿入" onClick={() => send('insertRowAbove')} title="上に行を挿入 (Alt+Shift+↑)" />
-        <RibbonButton icon={ArrowDownToLine} label="下に行挿入" onClick={() => send('insertRowBelow')} title="下に行を挿入 (Alt+Shift+↓)" />
+        <RibbonButton icon={ArrowDownToLine} label="下に行挿入" onClick={() => send('insertRowBelow')} title="下に行を挿入 (Ctrl+Enter)" />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="列の挿入">
@@ -128,9 +139,9 @@ function DataTab() {
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="行の操作">
-        <RibbonButton icon={MoveUp} label="行を上に移動" onClick={() => send('moveRowUp')} title="行を上に移動 (Ctrl+Shift+H)" />
-        <RibbonButton icon={MoveDown} label="行を下に移動" onClick={() => send('moveRowDown')} title="行を下に移動 (Ctrl+Alt+H)" />
-        <RibbonButton icon={CopyPlus} label="行を複製" onClick={() => send('duplicateRow')} title="行を複製" />
+        <RibbonButton icon={MoveUp} label="行を上に移動" onClick={() => send('moveRowUp')} title="行を上に移動 (Alt+↑)" />
+        <RibbonButton icon={MoveDown} label="行を下に移動" onClick={() => send('moveRowDown')} title="行を下に移動 (Alt+↓)" />
+        <RibbonButton icon={CopyPlus} label="行を複製" onClick={() => send('duplicateRow')} title="行を複製 (Ctrl+Shift+D)" />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="整形">
@@ -140,22 +151,22 @@ function DataTab() {
   )
 }
 
-function ViewTab() {
+function ViewTab({ toggleStates }: { toggleStates?: ToggleStates }) {
   return (
     <>
       <RibbonGroup label="表示設定">
-        <RibbonButton icon={AlignVerticalJustifyCenter} label="縦ヘッダー" onClick={() => send('toggleVertHeader')} title="縦書きヘッダー切替" />
-        <RibbonButton icon={WrapText} label="セル折り返し" onClick={() => send('toggleWrap')} title="セル内折り返し切替" />
-        <RibbonButton icon={PanelLeft} label="列固定" onClick={() => send('toggleFreeze')} title="選択列を固定" />
+        <RibbonButton icon={AlignVerticalJustifyCenter} label="縦ヘッダー" onClick={() => send('toggleVertHeader')} title="縦書きヘッダー切替" active={toggleStates?.verticalHeaderActive} />
+        <RibbonButton icon={WrapText} label="セル折り返し" onClick={() => send('toggleWrap')} title="セル内折り返し切替" active={toggleStates?.wrapActive} />
+        <RibbonButton icon={PanelLeft} label="列固定" onClick={() => send('toggleFreeze')} title="選択列を固定 (Ctrl+Shift+F)" active={toggleStates?.freezeActive} />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="行・列サイズ">
         <RibbonButton icon={Shrink} label="行高さ変更" onClick={() => send('cycleRowHeight')} title="行の高さを切替" />
-        <RibbonButton icon={ALargeSmall} label="テキスト縮小" onClick={() => send('toggleFitText')} title="テキストを列幅に合わせて縮小" />
+        <RibbonButton icon={ALargeSmall} label="テキスト縮小" onClick={() => send('toggleFitText')} title="テキストを列幅に合わせて縮小" active={toggleStates?.fitTextActive} />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="強調">
-        <RibbonButton icon={Highlighter} label="条件付き強調" onClick={() => send('toggleCondHL')} title="条件付きハイライト切替" />
+        <RibbonButton icon={Highlighter} label="条件付き強調" onClick={() => send('toggleCondHL')} title="条件付きハイライト切替" active={toggleStates?.condHLActive} />
         <RibbonButton icon={Layers} label="重複強調" onClick={() => send('dupHighlight')} title="重複行を強調表示" />
       </RibbonGroup>
       <Divider />
@@ -175,11 +186,15 @@ function ToolsTab() {
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="出力・プレビュー">
-        <RibbonButton icon={Globe} label="HTMLプレビュー" onClick={() => send('htmlPreview')} title="HTMLプレビューを表示" />
+        <RibbonButton icon={Globe} label="プレビュー" onClick={() => send('htmlPreview')} title="HTMLプレビューを表示" />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="分析">
         <RibbonButton icon={BarChart2} label="列統計" onClick={() => send('colStats')} title="選択列の統計情報を表示" />
+      </RibbonGroup>
+      <Divider />
+      <RibbonGroup label="デバッグ">
+        <RibbonButton icon={Bug} label="メモ" onClick={() => send('debugMemo')} title="デバッグメモをGitHubに送信" />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="設定・ヘルプ">
