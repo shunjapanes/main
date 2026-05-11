@@ -2343,6 +2343,7 @@
         colorPreviewCol: -1, // カラーコード列インデックス
         headerMode: "firstRow", // "firstRow" | "numbered"
         sortKeys: [], // 複数列ソートキー [{col, asc}, ...]
+        cellColors: {}, // {"row,col": "#RRGGBB"} セル背景色（保存非対応・セッション内のみ）
         tabs: [], // 複数ファイルタブ
         activeTab: -1,
       };
@@ -2462,6 +2463,7 @@
         t.wrapCells = state.wrapCells;
         t.wrapRows = new Set(state.wrapRows);
         t.conditionalHL = state.conditionalHL;
+        t.cellColors = { ...state.cellColors };
       }
 
       function switchTab(idx) {
@@ -2512,6 +2514,7 @@
           state.wrapCells = t.wrapCells || false;
           state.wrapRows = t.wrapRows ? new Set(t.wrapRows) : new Set();
           state.conditionalHL = t.conditionalHL || false;
+          state.cellColors = t.cellColors ? { ...t.cellColors } : {};
           // filteredIndicesをレンダリングなしで再計算
           _visibleRowsCache = null;
           const fkeys = Object.keys(state.columnFilters);
@@ -4224,8 +4227,10 @@
                 fitStyle = `font-size:${fs}px;`;
               }
             }
+            const _cc = state.cellColors[i + "," + j];
             const style =
-              `width:${tdCw}px;min-width:${tdCw}px;max-width:${tdCw}px;${fitStyle}` + extraStyle;
+              `width:${tdCw}px;min-width:${tdCw}px;max-width:${tdCw}px;${fitStyle}` + extraStyle +
+              (_cc ? `background-color:${_cc};` : "");
             const isSelected =
               cls.includes("selected") || cls.includes("in-range");
             let displayVal = escHtml(cellVal);
@@ -5489,16 +5494,23 @@
             ? '"' + s.replace(/"/g, '""') + '"'
             : s;
         };
+        const htmlRows = [];
         for (let r = minR; r <= maxR; r++) {
-          if (state.hiddenRows.has(r)) continue; // 非表示行をスキップ
-          if (filteredSet && !filteredSet.has(r)) continue; // フィルター除外行をスキップ
+          if (state.hiddenRows.has(r)) continue;
+          if (filteredSet && !filteredSet.has(r)) continue;
           const row = [];
+          const htmlCells = [];
           for (let c = minC; c <= maxC; c++) {
-            if (state.hiddenCols.has(c)) continue; // 非表示列をスキップ
-            row.push(safeGet(r, c));
+            if (state.hiddenCols.has(c)) continue;
+            const val = safeGet(r, c);
+            row.push(val);
+            const bg = state.cellColors[r + "," + c];
+            const sty = bg ? ` style="background:${bg}"` : "";
+            htmlCells.push(`<td${sty}>${escHtml(val)}</td>`);
           }
           data2d.push(row);
           txt += row.map(copyEsc).join(copyDelim) + "\n";
+          htmlRows.push(`<tr>${htmlCells.join("")}</tr>`);
         }
         state.clipboard = {
           data2d,
@@ -5506,8 +5518,18 @@
           cols: data2d[0]?.length ?? 0,
         };
         const headerNote = minR === 0 ? " (ヘッダー含む)" : "";
+        const htmlTable = `<table><tbody>${htmlRows.join("")}</tbody></table>`;
         try {
-          await navigator.clipboard.writeText(txt);
+          if (typeof ClipboardItem !== "undefined") {
+            await navigator.clipboard.write([
+              new ClipboardItem({
+                "text/plain": new Blob([txt], { type: "text/plain" }),
+                "text/html": new Blob([htmlTable], { type: "text/html" }),
+              }),
+            ]);
+          } else {
+            await navigator.clipboard.writeText(txt);
+          }
           setStatus(
             `コピーしました (${data2d.length}行 × ${data2d[0]?.length ?? 0}列)${headerNote}`,
           );
@@ -5986,6 +6008,27 @@
         return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
 
+      function _applyCellColor(color) {
+        saveUndo();
+        const cells = [];
+        if (state.range) {
+          const r1 = Math.min(state.range.r1, state.range.r2);
+          const r2 = Math.max(state.range.r1, state.range.r2);
+          const c1 = Math.min(state.range.c1, state.range.c2);
+          const c2 = Math.max(state.range.c1, state.range.c2);
+          for (let r = r1; r <= r2; r++)
+            for (let c = c1; c <= c2; c++) cells.push([r, c]);
+        } else if (state.selected) {
+          cells.push([state.selected.row, state.selected.col]);
+        }
+        for (const [r, c] of cells) {
+          if (color) state.cellColors[r + "," + c] = color;
+          else delete state.cellColors[r + "," + c];
+        }
+        state.forceRender = true;
+        renderBody();
+      }
+
       // ===== 右クリックメニュー =====
       function onContextMenu(e) {
         const dataTd = e.target.closest("td[data-col]");
@@ -6407,6 +6450,19 @@
               { label: "重複行を削除", danger: true, action: deleteDuplicates },
             ],
           },
+          {
+            group: "書式",
+            icon: "🎨",
+            children: [
+              { label: "🟡 黄（確認中）", action: () => _applyCellColor("#FFF9C4") },
+              { label: "🟢 緑（完了）", action: () => _applyCellColor("#C8E6C9") },
+              { label: "🔴 赤（NG）", action: () => _applyCellColor("#FFCDD2") },
+              { label: "🔵 青（対応中）", action: () => _applyCellColor("#BBDEFB") },
+              { label: "🟠 橙（保留）", action: () => _applyCellColor("#FFE0B2") },
+              { label: "🟣 紫（メモ）", action: () => _applyCellColor("#E1BEE7") },
+              { label: "⬜ クリア", action: () => _applyCellColor(null) },
+            ],
+          },
         ];
 
         function renderChildren(children) {
@@ -6575,6 +6631,7 @@
         state.priceRef = null;
         state._dupSet = null;
         state._dupCol = null;
+        state.cellColors = {};
         state.dirty = false;
         document.body.classList.remove("wrap-cells");
         $("btn-wrap").classList.remove("active-state");
@@ -6619,6 +6676,7 @@
           sortKeys: [],
           headerMode: "firstRow",
           dirty: false,
+          cellColors: {},
           _isBlankSheet: true,
         };
         state.tabs.push(tab);
@@ -6786,6 +6844,7 @@
           hiddenRows: new Set(state.hiddenRows),
           hiddenCols: new Set(state.hiddenCols),
           headerMode: state.headerMode,
+          cellColors: { ...state.cellColors },
         };
       }
       function restoreState(s) {
@@ -6800,6 +6859,7 @@
         state.hiddenRows = s.hiddenRows || new Set();
         state.hiddenCols = s.hiddenCols || new Set();
         state.headerMode = s.headerMode || "firstRow";
+        state.cellColors = s.cellColors ? { ...s.cellColors } : {};
         applyHeaderMapping();
         updateHeaderModeBtn();
       }
@@ -8962,6 +9022,7 @@
               state.wrapCells = false;
               state.wrapRows.clear();
               state.conditionalHL = false;
+              state.cellColors = {};
               if (state.priceRef) {
                 state.priceRef = null;
                 $('btn-price-ref').classList.remove('active-state');
