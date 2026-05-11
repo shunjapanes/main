@@ -2765,6 +2765,7 @@
         els.filterToggle.onclick = toggleFilter;
         els.filterClear.onclick = clearAllFilters;
         let _imeComposing = false;
+        let _lastSearched = '';
         els.search.addEventListener('compositionstart', () => { _imeComposing = true; });
         els.search.addEventListener('compositionend', () => { _imeComposing = false; execSearch(); });
         els.search.oninput = debounce(() => { if (!_imeComposing) execSearch(); }, 150);
@@ -3468,7 +3469,10 @@
           }
           state.sortKeys = [{ col: state.sortCol, asc: state.sortAsc }];
         }
-        state.data.sort((a, b) => {
+        // 1行目をヘッダーとして固定し、2行目以降のみソート対象とする
+        const _sortHeader = state.data.length > 1 ? state.data[0] : null;
+        const _sortData = _sortHeader ? state.data.slice(1) : state.data;
+        _sortData.sort((a, b) => {
           for (const { col: c, asc } of state.sortKeys) {
             const va = a[c] ?? "",
               vb = b[c] ?? "";
@@ -3486,6 +3490,7 @@
           }
           return 0;
         });
+        if (_sortHeader) state.data = [_sortHeader, ..._sortData];
         state.selected = null;
         state.range = null;
         state.anchor = null;
@@ -3494,6 +3499,7 @@
         renderHeader();
         state.forceRender = true;
         renderBody();
+        execSearch();
         const keyDesc = state.sortKeys
           .map((k) => `「${getDisplayHeader(k.col)}」${k.asc ? "▲" : "▼"}`)
           .join(", ");
@@ -4911,8 +4917,15 @@
 
         if (e.target === els.search) {
           if (e.key === "Enter") {
-            moveSearch(e.shiftKey ? -1 : 1);
             e.preventDefault();
+            if (els.search.value !== _lastSearched) {
+              // クエリが変わっており未検索：即実行（execSearch内でhit[0]へ移動）
+              execSearch();
+              if (e.shiftKey && state.searchHits.length > 1) moveSearch(-1);
+            } else {
+              // 同クエリの繰り返しナビゲート
+              moveSearch(e.shiftKey ? -1 : 1);
+            }
           }
           if (e.key === "Escape") els.search.blur();
           return;
@@ -6208,7 +6221,9 @@
                   state.sortCol = col;
                   state.sortAsc = true;
                   state.sortKeys = [{ col, asc: true }];
-                  state.data.sort((a, b) => {
+                  const _ch1 = state.data.length > 1 ? state.data[0] : null;
+                  const _cd1 = _ch1 ? state.data.slice(1) : state.data;
+                  _cd1.sort((a, b) => {
                     const va = a[col] ?? "",
                       vb = b[col] ?? "";
                     if (va === "" && vb === "") return 0;
@@ -6220,6 +6235,7 @@
                       return na - nb;
                     return String(va).localeCompare(String(vb), "ja");
                   });
+                  if (_ch1) state.data = [_ch1, ..._cd1];
                   state.selected = null;
                   state.range = null;
                   state.anchor = null;
@@ -6228,6 +6244,7 @@
                   renderHeader();
                   state.forceRender = true;
                   renderBody();
+                  execSearch();
                   setStatus(`「${getDisplayHeader(col)}」で昇順ソート`);
                 },
               },
@@ -6238,7 +6255,9 @@
                   state.sortCol = col;
                   state.sortAsc = false;
                   state.sortKeys = [{ col, asc: false }];
-                  state.data.sort((a, b) => {
+                  const _ch2 = state.data.length > 1 ? state.data[0] : null;
+                  const _cd2 = _ch2 ? state.data.slice(1) : state.data;
+                  _cd2.sort((a, b) => {
                     const va = a[col] ?? "",
                       vb = b[col] ?? "";
                     if (va === "" && vb === "") return 0;
@@ -6250,6 +6269,7 @@
                       return nb - na;
                     return String(vb).localeCompare(String(va), "ja");
                   });
+                  if (_ch2) state.data = [_ch2, ..._cd2];
                   state.selected = null;
                   state.range = null;
                   state.anchor = null;
@@ -6258,6 +6278,7 @@
                   renderHeader();
                   state.forceRender = true;
                   renderBody();
+                  execSearch();
                   setStatus(`「${getDisplayHeader(col)}」で降順ソート`);
                 },
               },
@@ -6833,6 +6854,7 @@
 
       function execSearch() {
         const q = els.search.value;
+        if (typeof _lastSearched !== 'undefined') _lastSearched = q;
         state.searchHits = [];
         state.searchIdx = -1;
         if (!q) {
@@ -7051,7 +7073,11 @@
           setStatus("有効な行番号を入力してください");
           return;
         }
-        const r = Math.min(n - 1, state.data.length - 1);
+        if (n > state.data.length) {
+          setStatus(`⚠ 行 ${n} は範囲外です（全 ${state.data.length} 行）`);
+          return;
+        }
+        const r = n - 1;
         moveTo(r, state.selected?.col ?? 0);
         state.forceRender = true;
         renderBody();
@@ -7531,32 +7557,52 @@
         reader.readAsText(file, "utf-8");
       }
 
+      function _doSejDisconnect() {
+        // 仮想列を削除（末尾から削ることで他indexに影響しない）
+        if (state.sejVirtualCols && state.sejVirtualCols.indices.length) {
+          const sorted = [...state.sejVirtualCols.indices].sort((a, b) => b - a);
+          for (const vIdx of sorted) {
+            state.headers.splice(vIdx, 1);
+            if (state.displayHeaders) state.displayHeaders.splice(vIdx, 1);
+            state.data.forEach(row => row.splice(vIdx, 1));
+            if (state.columnFilters && state.columnFilters[vIdx]) delete state.columnFilters[vIdx];
+            if (state.colWidths && state.colWidths[vIdx] != null) delete state.colWidths[vIdx];
+          }
+          state.sejVirtualCols = null;
+          applyFilters();
+        }
+        state.sejMaster = null;
+        $("btn-sej-link").classList.remove("active-state");
+        $("btn-sej-link").textContent = "SEJ連携";
+        state.forceRender = true;
+        renderHeader();
+        renderBody();
+        setStatus("SEJ連携を解除しました");
+        _ribSyncToggles();
+      }
+
       function toggleSejLink() {
         if (state.sejMaster) {
           const fn = state.sejMaster.fileName || "(不明)";
-          if (!confirm(`SEJ連携を解除しますか？\n\n現在読み込んでいる席種エリアマスタ:\n${fn}\n\n解除するとメモリ上のマスタデータは破棄されます。\n（再度連携するにはマスタファイルを再選択する必要があります）`)) return;
-          // 仮想列を削除（末尾から削ることで他indexに影響しない）
-          if (state.sejVirtualCols && state.sejVirtualCols.indices.length) {
-            const sorted = [...state.sejVirtualCols.indices].sort((a, b) => b - a);
-            for (const vIdx of sorted) {
-              state.headers.splice(vIdx, 1);
-              if (state.displayHeaders) state.displayHeaders.splice(vIdx, 1);
-              state.data.forEach(row => row.splice(vIdx, 1));
-              if (state.columnFilters && state.columnFilters[vIdx]) delete state.columnFilters[vIdx];
-              if (state.colWidths && state.colWidths[vIdx] != null) delete state.colWidths[vIdx];
-            }
-            state.sejVirtualCols = null;
-            applyFilters();
-          }
-          state.sejMaster = null;
-          $("btn-sej-link").classList.remove("active-state");
-          $("btn-sej-link").textContent = "SEJ連携";
-          state.forceRender = true;
-          renderHeader();
-          renderBody();
-          setStatus("SEJ連携を解除しました");
+          // confirm()はiframe内でブロックされる場合があるためカスタムモーダルを使用
+          const _ov = document.createElement("div");
+          _ov.className = "modal-overlay";
+          _ov.innerHTML = `<div class="modal-dialog">
+            <div class="modal-title">SEJ連携を解除しますか？</div>
+            <p style="font-size:13px;margin:8px 0 4px">現在のマスタ: <strong>${escHtml(fn)}</strong><br>解除するとマスタデータは破棄されます。</p>
+            <div class="modal-btns">
+              <button id="_sej-cancel" class="btn-default">キャンセル</button>
+              <button id="_sej-ok" class="btn-primary">解除する</button>
+            </div>
+          </div>`;
+          document.body.appendChild(_ov);
+          _ov.querySelector("#_sej-cancel").onclick = () => _ov.remove();
+          _ov.querySelector("#_sej-ok").onclick = () => { _ov.remove(); _doSejDisconnect(); };
+          _ov.onkeydown = (e) => { if (e.key === "Escape") _ov.remove(); };
+          _ov.querySelector("#_sej-cancel").focus();
           return;
         }
+        setStatus("SEJマスタファイルを選択してください...");
         const input = document.createElement("input");
         input.type = "file";
         input.accept = ".tsv,.txt,text/plain";
@@ -7885,7 +7931,17 @@
         }
 
         if (!colMap.length) {
-          setStatus("⚠ マスター列が見つかりません");
+          const _ov = document.createElement("div");
+          _ov.className = "modal-overlay";
+          _ov.innerHTML = `<div class="modal-dialog">
+            <div class="modal-title">⚠ マスター列が見つかりません</div>
+            <p style="font-size:13px;margin:8px 0 4px">HTML出力に必要な列が見つかりませんでした。<br>「ファイル → マスター読み込み」でマスターファイルを読み込んでください。</p>
+            <div class="modal-btns"><button id="_preview-err-ok" class="btn-primary">閉じる</button></div>
+          </div>`;
+          document.body.appendChild(_ov);
+          _ov.querySelector("#_preview-err-ok").onclick = () => _ov.remove();
+          _ov.onkeydown = (e) => { if (e.key === "Escape") _ov.remove(); };
+          _ov.querySelector("#_preview-err-ok").focus();
           return;
         }
 
@@ -9041,8 +9097,16 @@
           'htmlPreview':     function() { exportHtmlPreview(); },
           'colStats':        function() {
             var col = _ribGetCurCol();
-            if (col < 0) { setStatus('統計を見る列のセルを選択してください'); return; }
-            showColStats(col);
+            if (col < 0) {
+              setStatus('統計を見る列のセルを選択してください');
+              return;
+            }
+            try {
+              showColStats(col);
+            } catch(e) {
+              setStatus('列統計の表示に失敗しました: ' + e.message);
+              console.error('[colStats]', e);
+            }
           },
           'dictEditor':      function() { openDictEditor(); },
           'showHelp':        function() { showManual(); },
