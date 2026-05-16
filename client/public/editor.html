@@ -2173,6 +2173,50 @@
       };
 
       let ROW_H = 22;
+
+      function refreshSelectionStatus() {
+        updateStatusPos();
+      }
+
+      function refreshSearchAndStatus() {
+        if (els.search && els.search.value) {
+          execSearch(true);
+        } else {
+          rebuildHitSet();
+          state.forceRender = true;
+          renderBody();
+          refreshSelectionStatus();
+        }
+      }
+
+      function keepSelectionVisible() {
+        if (!state.selected) return;
+        const rows = getVisibleRows();
+        const visible = rows._direct
+          ? !state.hiddenRows.has(state.selected.row)
+          : rows._indices.includes(state.selected.row);
+        if (visible && !state.hiddenCols.has(state.selected.col)) return;
+        if (rows.length > 0) {
+          const row = rows._direct ? 0 : rows._indices[0];
+          const cols = getVisibleCols();
+          state.selected = { row, col: cols[0] ?? 0 };
+          state.anchor = { ...state.selected };
+        } else {
+          state.selected = null;
+          state.anchor = null;
+        }
+        state.range = null;
+        state.selectedCol = null;
+      }
+
+      function notifySearchState() {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage(
+            { type: "searchState", query: els.search ? els.search.value : "" },
+            "*",
+          );
+        }
+      }
       const BUFFER = 20;
 
       // ===== セーフアクセス =====
@@ -2290,6 +2334,7 @@
         state.forceRender = true;
         renderBody();
         showTable();
+        notifySearchState();
       }
 
       function closeTab(idx) {
@@ -2319,9 +2364,21 @@
         }
         if (!state.tabs.length) {
           state.activeTab = -1;
-          $("tab-bar").style.display = "none";
+          state.selected = null;
+          state.anchor = null;
+          state.range = null;
+          state.searchHits = [];
+          state.searchIdx = -1;
+          state.data = [[""]];
+          state.headers = ["列1"];
+          state.fileName = "data.tsv";
+          renderTabBar();
+          els.statusPos.textContent = "";
+          els.statusStats.textContent = "";
+          notifySearchState();
           els.dropZone.classList.remove("hidden");
           els.container.style.display = "none";
+          setStatus("すべてのシートを閉じました");
           return;
         }
         const newIdx = Math.min(idx, state.tabs.length - 1);
@@ -3148,21 +3205,25 @@
       }
 
       // ===== ソート =====
-      function sortByColumn(col, shiftKey = false) {
+      function sortByColumn(col, shiftKey = false, explicitAsc = null) {
         if (col < 0 || col >= state.headers.length) return;
         saveUndo();
         if (shiftKey) {
           const existing = state.sortKeys.findIndex((k) => k.col === col);
           if (existing >= 0) {
-            state.sortKeys[existing].asc = !state.sortKeys[existing].asc;
+            state.sortKeys[existing].asc =
+              explicitAsc === null ? !state.sortKeys[existing].asc : !!explicitAsc;
           } else {
-            state.sortKeys.push({ col, asc: true });
+            state.sortKeys.push({ col, asc: explicitAsc === null ? true : !!explicitAsc });
           }
           state.sortCol = col;
           state.sortAsc =
             state.sortKeys.find((k) => k.col === col)?.asc ?? true;
         } else {
-          if (state.sortCol === col) state.sortAsc = !state.sortAsc;
+          if (explicitAsc !== null) {
+            state.sortCol = col;
+            state.sortAsc = !!explicitAsc;
+          } else if (state.sortCol === col) state.sortAsc = !state.sortAsc;
           else {
             state.sortCol = col;
             state.sortAsc = true;
@@ -3195,6 +3256,7 @@
         renderHeader();
         state.forceRender = true;
         renderBody();
+        refreshSearchAndStatus();
         const keyDesc = state.sortKeys
           .map((k) => `「${getDisplayHeader(k.col)}」${k.asc ? "▲" : "▼"}`)
           .join(", ");
@@ -3225,8 +3287,10 @@
           els.filterClear.style.display = "none";
           els.filterExport.style.display = "none";
           updateHiddenStatus();
+          keepSelectionVisible();
           state.forceRender = true;
           renderBody();
+          refreshSelectionStatus();
           return;
         }
         state.filteredIndices = [];
@@ -3268,8 +3332,10 @@
         els.filterClear.style.display = "";
         els.filterExport.style.display = "";
         updateHiddenStatus();
+        keepSelectionVisible();
         state.forceRender = true;
         renderBody();
+        refreshSearchAndStatus();
       }
 
       function clearAllFilters() {
@@ -3283,8 +3349,10 @@
         });
         updateHiddenStatus();
         renderHeader();
+        keepSelectionVisible();
         state.forceRender = true;
         renderBody();
+        refreshSearchAndStatus();
       }
 
       // ===== フィルタードロップダウン =====
@@ -5083,6 +5151,7 @@
         markDirty();
         state.forceRender = true;
         renderBody();
+        refreshSearchAndStatus();
         setStatus("切り取りしました");
       }
 
@@ -5225,6 +5294,7 @@
         markDirty();
         state.forceRender = true;
         renderBody();
+        refreshSearchAndStatus();
         setStatus("選択範囲全体にペーストしました");
       }
 
@@ -5312,6 +5382,7 @@
         markDirty();
         state.forceRender = true;
         renderBody();
+        refreshSearchAndStatus();
         setStatus("ペーストしました");
       }
 
@@ -5522,8 +5593,8 @@
           markDirty();
           state.forceRender = true;
           renderBody();
+          refreshSearchAndStatus();
           setStatus("1件置換しました");
-          replaceFindNext();
         } else replaceFindNext();
       }
 
@@ -5585,6 +5656,7 @@
         markDirty();
         state.forceRender = true;
         renderBody();
+        refreshSearchAndStatus();
         setStatus(`${cnt}件を置換しました${scopeNote}`);
       }
       function escRe(s) {
@@ -5822,61 +5894,13 @@
               {
                 label: "昇順ソート ▲",
                 action: () => {
-                  saveUndo();
-                  state.sortCol = col;
-                  state.sortAsc = true;
-                  state.sortKeys = [{ col, asc: true }];
-                  state.data.sort((a, b) => {
-                    const va = a[col] ?? "",
-                      vb = b[col] ?? "";
-                    if (va === "" && vb === "") return 0;
-                    if (va === "") return 1;
-                    if (vb === "") return -1;
-                    const na = Number(va),
-                      nb = Number(vb);
-                    if (!isNaN(na) && !isNaN(nb))
-                      return na - nb;
-                    return String(va).localeCompare(String(vb), "ja");
-                  });
-                  state.selected = null;
-                  state.range = null;
-                  state.anchor = null;
-                  applyFilters();
-                  markDirty();
-                  renderHeader();
-                  state.forceRender = true;
-                  renderBody();
-                  setStatus(`「${getDisplayHeader(col)}」で昇順ソート`);
+                  sortByColumn(col, false, true);
                 },
               },
               {
                 label: "降順ソート ▼",
                 action: () => {
-                  saveUndo();
-                  state.sortCol = col;
-                  state.sortAsc = false;
-                  state.sortKeys = [{ col, asc: false }];
-                  state.data.sort((a, b) => {
-                    const va = a[col] ?? "",
-                      vb = b[col] ?? "";
-                    if (va === "" && vb === "") return 0;
-                    if (va === "") return 1;
-                    if (vb === "") return -1;
-                    const na = Number(va),
-                      nb = Number(vb);
-                    if (!isNaN(na) && !isNaN(nb))
-                      return nb - na;
-                    return String(vb).localeCompare(String(va), "ja");
-                  });
-                  state.selected = null;
-                  state.range = null;
-                  state.anchor = null;
-                  applyFilters();
-                  markDirty();
-                  renderHeader();
-                  state.forceRender = true;
-                  renderBody();
-                  setStatus(`「${getDisplayHeader(col)}」で降順ソート`);
+                  sortByColumn(col, false, false);
                 },
               },
               { sep: true },
@@ -6150,6 +6174,7 @@
         state.searchHits = [];
         state.searchIdx = -1;
         _hitSet.clear();
+        if (els.search) els.search.value = "";
         state.colWidths = {};
         state.isEditing = false;
         state.columnFilters = {};
@@ -6167,6 +6192,8 @@
         state.headerMode = "firstRow";
         state.wrapCells = false;
         state.wrapRows.clear();
+        state.fitText = false;
+        _fitFont = null;
         state.regexMode = false;
         state.conditionalHL = false;
         state._dupSet = null;
@@ -6175,6 +6202,8 @@
         document.body.classList.remove("wrap-cells");
         $("btn-wrap").classList.remove("active-state");
         $("btn-wrap").setAttribute("aria-pressed", "false");
+        $("btn-fit-text").classList.remove("active-state");
+        $("btn-fit-text").setAttribute("aria-pressed", "false");
         _visibleRowsCache = null;
         _visibleRowsCacheKey = "";
         lastRenderKey = null;
@@ -6223,6 +6252,7 @@
         renderBody();
         showTable();
         markClean();
+        notifySearchState();
         setStatus(`新しいシート「${state.fileName}」を作成しました`);
       }
 
@@ -6419,6 +6449,7 @@
         renderHeader();
         renderBody();
         updateHiddenStatus();
+        refreshSearchAndStatus();
       }
       function redo() {
         if (!state.redoStack.length) return;
@@ -6430,6 +6461,7 @@
         renderHeader();
         renderBody();
         updateHiddenStatus();
+        refreshSearchAndStatus();
       }
 
       function buildSearchMatcher(q) {
@@ -6446,7 +6478,8 @@
         }
       }
 
-      function execSearch() {
+      function execSearch(preserveSelection = false) {
+        const prevSelected = state.selected ? { ...state.selected } : null;
         const q = els.search.value;
         state.searchHits = [];
         state.searchIdx = -1;
@@ -6455,6 +6488,7 @@
           rebuildHitSet();
           state.forceRender = true;
           renderBody();
+          refreshSelectionStatus();
           return;
         }
         const matcher = buildSearchMatcher(q);
@@ -6463,6 +6497,7 @@
           rebuildHitSet();
           state.forceRender = true;
           renderBody();
+          refreshSelectionStatus();
           return;
         }
         // 選択範囲があれば範囲内のみ検索
@@ -6480,10 +6515,20 @@
         rebuildHitSet();
         const scopeNote = scope ? ` (${getScopeLabel(scope)})` : "";
         els.count.textContent = `${state.searchHits.length}件${scopeNote}`;
-        if (state.searchHits.length > 0) moveSearch(1);
-        else {
+        if (state.searchHits.length > 0 && !preserveSelection) {
+          moveSearch(1);
+        } else {
+          if (preserveSelection && prevSelected) {
+            const currentIdx = state.searchHits.findIndex(
+              (h) => h.row === prevSelected.row && h.col === prevSelected.col,
+            );
+            state.searchIdx = currentIdx;
+            if (currentIdx >= 0)
+              els.count.textContent = `${currentIdx + 1}/${state.searchHits.length}件`;
+          }
           state.forceRender = true;
           renderBody();
+          refreshSelectionStatus();
         }
       }
       function moveSearch(dir) {
@@ -6772,9 +6817,12 @@
         state.selected.row = r - 1;
         if (state.anchor) state.anchor.row = r - 1;
         markDirty();
+        applyFilters();
         state.forceRender = true;
         renderBody();
         scrollToCell(r - 1);
+        updateHighlight();
+        setStatus(`行 ${r + 1} を上に移動しました`);
       }
       function moveRowDown() {
         if (!state.selected || state.selected.row >= state.data.length - 1)
@@ -6785,9 +6833,12 @@
         state.selected.row = r + 1;
         if (state.anchor) state.anchor.row = r + 1;
         markDirty();
+        applyFilters();
         state.forceRender = true;
         renderBody();
         scrollToCell(r + 1);
+        updateHighlight();
+        setStatus(`行 ${r + 1} を下に移動しました`);
       }
 
       // ===== 行の複製 =====
@@ -7700,12 +7751,18 @@
         state.searchHits = [];
         state.searchIdx = -1;
         els.search.value = "";
+        notifySearchState();
         // 折り返し解除
         state.wrapCells = false;
         state.wrapRows.clear();
         document.body.classList.remove("wrap-cells");
         $("btn-wrap").classList.remove("active-state");
         $("btn-wrap").setAttribute("aria-pressed", "false");
+        state.fitText = false;
+        _fitFont = null;
+        document.body.classList.remove("fit-text");
+        $("btn-fit-text").classList.remove("active-state");
+        $("btn-fit-text").setAttribute("aria-pressed", "false");
         // HTMLプレビュー解除
         state.htmlPreview = false;
         state.htmlPreviewCol = -1;
@@ -8143,6 +8200,14 @@
       // Only activate bridge when inside an iframe
       if (window.self === window.top) return;
 
+      function getActiveColumn() {
+        if (typeof state === 'undefined') return -1;
+        if (state.selected && typeof state.selected.col === 'number') return state.selected.col;
+        if (typeof state.curCol === 'number') return state.curCol;
+        if (typeof state.selectedCol === 'number') return state.selectedCol;
+        return -1;
+      }
+
       // ---- postMessage → editor function dispatch ----
       window.addEventListener('message', function(e) {
         if (e.source !== window.parent) return;
@@ -8151,7 +8216,7 @@
         var payload = msg.payload;
 
         var dispatch = {
-          'new':             function() { resetState(); },
+          'new':             function() { addNewSheet(); },
           'open':            function() { var el = document.getElementById('open-input'); if(el) el.click(); },
           'save':            function() { saveFile(); },
           'saveAs':          function() { saveFile(); }, // saveFile handles save-as dialog
@@ -8166,8 +8231,8 @@
           'copy':            function() { copyToClipboard(); },
           'paste':           function() { pasteFromClipboard(); },
           'toggleFilter':    function() { toggleFilter(); },
-          'sortAsc':         function() { if(typeof state !== 'undefined') sortByColumn(state.curCol); },
-          'sortDesc':        function() { if(typeof state !== 'undefined') sortByColumn(state.curCol, false, true); },
+          'sortAsc':         function() { sortByColumn(getActiveColumn(), false, true); },
+          'sortDesc':        function() { sortByColumn(getActiveColumn(), false, false); },
           'autoFit':         function() { autoFitAllColumns(); },
           'insertRowAbove':  function() { onKeyDown({ key: 'ArrowUp',    altKey: true, shiftKey: true, ctrlKey: false, metaKey: false, preventDefault: function(){} }); },
           'insertRowBelow':  function() { addRowBelow(); },
@@ -8192,7 +8257,7 @@
           'loadSejMaster':   function() { var el = document.getElementById('sej-master-input'); if(el) el.click(); },
           'toggleSej':       function() { toggleSejLink(); },
           'htmlPreview':     function() { exportHtmlPreview(); },
-          'colStats':        function() { if(typeof state !== 'undefined') showColStats(state.curCol); },
+          'colStats':        function() { showColStats(getActiveColumn()); },
           'dictEditor':      function() { openDictEditor(); },
           'showHelp':        function() { showManual(); },
           'switchTab':       function() { if(typeof payload === 'number') switchTab(payload); },
@@ -8200,8 +8265,10 @@
           'gotoRow':         function() { if(payload) gotoRow(payload); },
           'search':          function() {
             var inp = document.getElementById('search-input');
-            if (inp && payload) {
-              inp.value = payload;
+            var rfind = document.getElementById('replace-find');
+            if (inp) {
+              inp.value = payload || '';
+              if (rfind) rfind.value = payload || '';
               execSearch();
             }
           },
@@ -8209,14 +8276,19 @@
           'searchPrev':      function() { moveSearch(-1); },
           'clearSearch':     function() {
             var inp = document.getElementById('search-input');
-            if (inp) { inp.value = ''; execSearch(); }
+            var rfind = document.getElementById('replace-find');
+            if (inp) {
+              inp.value = '';
+              if (rfind) rfind.value = '';
+              execSearch();
+            }
           },
           'replaceOne':      function() {
-            var inp = document.getElementById('replace-input');
+            var inp = document.getElementById('replace-with');
             if (inp && payload !== undefined) { inp.value = payload; replaceOne(); }
           },
           'replaceAll':      function() {
-            var inp = document.getElementById('replace-input');
+            var inp = document.getElementById('replace-with');
             if (inp && payload !== undefined) { inp.value = payload; replaceAll(); }
           },
         };
@@ -8241,9 +8313,12 @@
         window.updateStatusPos = function() {
           _origUpdateStatusPos();
           if (typeof state !== 'undefined') {
-            var r = state.curRow, c = state.curCol;
-            var pos = (r >= 0 && c >= 0) ? ('R' + (r + 1) + ' C' + (c + 1)) : '';
+            var posEl = document.getElementById('status-pos');
+            var statsEl = document.getElementById('status-stats');
+            var pos = posEl ? posEl.textContent : '';
+            var stats = statsEl ? statsEl.textContent : '';
             window.parent.postMessage({ type: 'position', position: pos }, '*');
+            window.parent.postMessage({ type: 'stats', stats: stats }, '*');
           }
         };
       }
@@ -8255,7 +8330,7 @@
           _origRenderTabBar();
           if (typeof state !== 'undefined' && Array.isArray(state.tabs)) {
             var tabData = state.tabs.map(function(t) {
-              return { name: t.name || 'Sheet', dirty: !!t.dirty };
+              return { name: t.name || t.fileName || 'Sheet', dirty: !!t.dirty };
             });
             window.parent.postMessage({ type: 'tabs', tabs: tabData, activeTab: state.activeTab }, '*');
           }
