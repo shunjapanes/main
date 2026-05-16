@@ -10,21 +10,23 @@ interface Tab {
 }
 
 interface EditorMessage {
-  type: 'status' | 'tabs' | 'position' | 'stats'
+  type: 'status' | 'tabs' | 'position' | 'stats' | 'searchState'
   text?: string
   tabs?: Tab[]
   activeTab?: number
   position?: string
   stats?: string
+  query?: string
 }
 
 export default function App() {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const [status, setStatus] = useState('準備完了')
-  const [tabs, setTabs] = useState<Tab[]>([{ name: 'Sheet1', dirty: false }])
-  const [activeTab, setActiveTab] = useState(0)
+  const [tabs, setTabs] = useState<Tab[]>([])
+  const [activeTab, setActiveTab] = useState(-1)
   const [position, setPosition] = useState('')
   const [stats, setStats] = useState('')
+  const [searchResetToken, setSearchResetToken] = useState(0)
 
   useEffect(() => {
     const handler = (e: MessageEvent<EditorMessage>) => {
@@ -37,6 +39,7 @@ export default function App() {
       }
       if (msg.type === 'position' && msg.position !== undefined) setPosition(msg.position)
       if (msg.type === 'stats' && msg.stats !== undefined) setStats(msg.stats)
+      if (msg.type === 'searchState' && msg.query === '') setSearchResetToken(v => v + 1)
     }
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
@@ -45,7 +48,7 @@ export default function App() {
   return (
     <div className="flex flex-col h-full w-full overflow-hidden">
       <RibbonToolbar />
-      <SearchBar />
+      <SearchBar resetToken={searchResetToken} />
       <iframe
         ref={iframeRef}
         id="editor-frame"

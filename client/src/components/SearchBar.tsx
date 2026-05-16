@@ -1,12 +1,21 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Search, Replace, Hash, ChevronDown, ChevronUp, X } from 'lucide-react'
 import { send } from '../lib/bridge'
 
-export default function SearchBar() {
+interface Props {
+  resetToken: number
+}
+
+export default function SearchBar({ resetToken }: Props) {
   const [query, setQuery] = useState('')
   const [replaceText, setReplaceText] = useState('')
   const [showReplace, setShowReplace] = useState(false)
   const [rowNum, setRowNum] = useState('')
+
+  useEffect(() => {
+    setQuery('')
+    setReplaceText('')
+  }, [resetToken])
 
   const doSearch = () => {
     send('search', query)
@@ -27,7 +36,10 @@ export default function SearchBar() {
           value={query}
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => {
-            if (e.key === 'Enter') { e.shiftKey ? send('searchPrev') : send('searchNext') }
+            if (e.key === 'Enter') {
+              if (query) send('search', query)
+              else e.shiftKey ? send('searchPrev') : send('searchNext')
+            }
             if (e.key === 'Escape') { setQuery(''); send('clearSearch') }
           }}
         />
