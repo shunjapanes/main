@@ -3539,6 +3539,7 @@
         state.selected = null;
         state.range = null;
         state.anchor = null;
+        state._dupSet = null; // 行インデックスが変わるためクリア
         applyFilters();
         markDirty();
         renderHeader();
@@ -5091,6 +5092,7 @@
           saveUndo();
           _shiftRowColors(state.selected.row, 1);
           _shiftHiddenRows(state.selected.row, 1);
+          state._dupSet = null;
           state.data.splice(state.selected.row, 0, new Array(state.headers.length).fill(""));
           markDirty();
           applyFilters();
@@ -5815,6 +5817,7 @@
           : state.data.length;
         _shiftRowColors(insertAt, state.copiedRows.length);
         _shiftHiddenRows(insertAt, state.copiedRows.length);
+        state._dupSet = null;
         state.copiedRows.forEach((r, i) => {
           const row = [...r];
           while (row.length < state.headers.length) row.push("");
@@ -6182,6 +6185,7 @@
                   saveUndo();
                   _shiftRowColors(row, 1);
                   _shiftHiddenRows(row, 1);
+                  state._dupSet = null;
                   state.data.splice(
                     row,
                     0,
@@ -6200,6 +6204,7 @@
                   saveUndo();
                   _shiftRowColors(row + 1, 1);
                   _shiftHiddenRows(row + 1, 1);
+                  state._dupSet = null;
                   state.data.splice(
                     row + 1,
                     0,
@@ -6342,6 +6347,7 @@
                   state.selected = null;
                   state.range = null;
                   state.anchor = null;
+                  state._dupSet = null;
                   applyFilters();
                   markDirty();
                   renderHeader();
@@ -6377,6 +6383,7 @@
                   state.selected = null;
                   state.range = null;
                   state.anchor = null;
+                  state._dupSet = null;
                   applyFilters();
                   markDirty();
                   renderHeader();
@@ -6756,6 +6763,7 @@
         const at = state.selected ? state.selected.row + 1 : state.data.length;
         _shiftRowColors(at, 1);
         _shiftHiddenRows(at, 1);
+        state._dupSet = null;
         state.data.splice(at, 0, Array(state.headers.length).fill(""));
         markDirty();
         applyFilters();
@@ -6777,6 +6785,7 @@
         if (state.data.length <= delCount) return;
         saveUndo();
         state.data.splice(r1, delCount);
+        state._dupSet = null;
         _deleteRangeHiddenRows(r1, r2);
         // 削除行の色を除去し、後続行のインデックスをシフト
         const newCC = {};
@@ -7535,6 +7544,7 @@
         saveUndo();
         _shiftRowColors(r + 1, 1);
         _shiftHiddenRows(r + 1, 1);
+        state._dupSet = null;
         state.data.splice(r + 1, 0, [...state.data[r]]);
         state.selected.row = r + 1;
         markDirty();
@@ -9384,6 +9394,7 @@
             saveUndo();
             _shiftRowColors(r, 1);
             _shiftHiddenRows(r, 1);
+            state._dupSet = null;
             state.data.splice(r, 0, new Array(state.headers.length).fill(''));
             markDirty(); applyFilters(); state.forceRender = true; renderBody();
             moveTo(r, state.selected.col);
