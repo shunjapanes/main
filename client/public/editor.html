@@ -8780,18 +8780,19 @@
         const tableHtml = rows.map(([k, v]) =>
           `<tr><td style="padding:3px 10px 3px 0;color:#666;white-space:nowrap">${k}</td><td style="padding:3px 0;font-weight:600">${v}</td></tr>`
         ).join("");
+        document.querySelector("._stats-ov")?.remove();
         const ov = document.createElement("div");
-        ov.className = "modal-overlay show";
+        ov.className = "modal-overlay show _stats-ov";
         ov.innerHTML = `<div class="modal-dialog" style="min-width:220px">
           <div class="modal-title">【${escHtml(getDisplayHeader(col))}】統計</div>
           <table style="border-collapse:collapse;font-size:13px;margin:8px 0">${tableHtml}</table>
-          <div class="modal-btns"><button id="stats-ok" class="btn-primary">閉じる</button></div>
+          <div class="modal-btns"><button class="_stats-ok btn-primary">閉じる</button></div>
         </div>`;
         document.body.appendChild(ov);
         const close = () => { ov.remove(); };
-        ov.querySelector("#stats-ok").onclick = close;
+        ov.querySelector("._stats-ok").onclick = close;
         ov.onkeydown = (e) => { if (e.key === "Escape") close(); };
-        ov.querySelector("#stats-ok").focus();
+        ov.querySelector("._stats-ok").focus();
       }
 
       // ===== 条件付きハイライト =====
