@@ -3394,17 +3394,19 @@
             state.data = state.data.slice(1);
             if (!state.data.length)
               state.data = [new Array(state.headers.length).fill("")];
-            // row 0 削除に伴いインデックスをシフト
+            // row 0 削除に伴いインデックスをシフト（hiddenRows/wrapRows）
             _deleteRangeHiddenRows(0, 0);
             // cellColors: row 0 を除去し残りを -1 シフト
-            const newCC = {};
-            for (const [k, v] of Object.entries(state.cellColors)) {
-              const sep = k.indexOf(",");
-              const ri = parseInt(k.slice(0, sep));
-              if (ri === 0) continue;
-              newCC[(ri - 1) + k.slice(sep)] = v;
+            if (Object.keys(state.cellColors).length) {
+              const newCC = {};
+              for (const [k, v] of Object.entries(state.cellColors)) {
+                const sep = k.indexOf(",");
+                const ri = parseInt(k.slice(0, sep));
+                if (ri === 0) continue;
+                newCC[(ri - 1) + k.slice(sep)] = v;
+              }
+              state.cellColors = newCC;
             }
-            state.cellColors = newCC;
           }
           state.headerMode = "firstRow";
         }
@@ -6921,28 +6923,39 @@
         state.cellColors = newCC;
       }
 
+      function _shiftRowIndexedSet(s, insertAt, count) {
+        if (!s.size) return s;
+        const ns = new Set();
+        for (const r of s) ns.add(r >= insertAt ? r + count : r);
+        return ns;
+      }
       function _shiftHiddenRows(insertAt, count) {
-        if (!state.hiddenRows.size) return;
-        const newHR = new Set();
-        for (const r of state.hiddenRows) newHR.add(r >= insertAt ? r + count : r);
-        state.hiddenRows = newHR;
+        state.hiddenRows = _shiftRowIndexedSet(state.hiddenRows, insertAt, count);
+        state.wrapRows   = _shiftRowIndexedSet(state.wrapRows,   insertAt, count);
+      }
+      function _swapRowIndexedSet(s, r1, r2) {
+        const h1 = s.has(r1), h2 = s.has(r2);
+        if (h1 === h2) return;
+        if (h1) { s.delete(r1); s.add(r2); }
+        else    { s.delete(r2); s.add(r1); }
       }
       function _swapHiddenRows(r1, r2) {
-        if (!state.hiddenRows.size) return;
-        const h1 = state.hiddenRows.has(r1), h2 = state.hiddenRows.has(r2);
-        if (h1 === h2) return;
-        if (h1) { state.hiddenRows.delete(r1); state.hiddenRows.add(r2); }
-        else    { state.hiddenRows.delete(r2); state.hiddenRows.add(r1); }
+        _swapRowIndexedSet(state.hiddenRows, r1, r2);
+        _swapRowIndexedSet(state.wrapRows,   r1, r2);
+      }
+      function _deleteRangeRowIndexedSet(s, r1, r2) {
+        if (!s.size) return s;
+        const delCount = r2 - r1 + 1;
+        const ns = new Set();
+        for (const r of s) {
+          if (r >= r1 && r <= r2) continue;
+          ns.add(r > r2 ? r - delCount : r);
+        }
+        return ns;
       }
       function _deleteRangeHiddenRows(r1, r2) {
-        if (!state.hiddenRows.size) return;
-        const delCount = r2 - r1 + 1;
-        const newHR = new Set();
-        for (const r of state.hiddenRows) {
-          if (r >= r1 && r <= r2) continue;
-          newHR.add(r > r2 ? r - delCount : r);
-        }
-        state.hiddenRows = newHR;
+        state.hiddenRows = _deleteRangeRowIndexedSet(state.hiddenRows, r1, r2);
+        state.wrapRows   = _deleteRangeRowIndexedSet(state.wrapRows,   r1, r2);
       }
 
       function cloneColumnFilters(cf) {
@@ -7364,14 +7377,15 @@
           }
           state.cellColors = newCC;
         }
-        if (state.hiddenRows.size > 0) {
+        if (state.hiddenRows.size > 0 || state.wrapRows.size > 0) {
           const origToNew = new Map(keptIdx.map((oi, ni) => [oi, ni]));
-          const newHR = new Set();
-          for (const r of state.hiddenRows) {
-            const newR = origToNew.get(r);
-            if (newR !== undefined) newHR.add(newR);
-          }
-          state.hiddenRows = newHR;
+          const remapSet = (s) => {
+            const ns = new Set();
+            for (const r of s) { const n = origToNew.get(r); if (n !== undefined) ns.add(n); }
+            return ns;
+          };
+          state.hiddenRows = remapSet(state.hiddenRows);
+          state.wrapRows   = remapSet(state.wrapRows);
         }
         const removed = before - state.data.length;
         if (removed > 0) {
@@ -8788,7 +8802,7 @@
         });
         if (!state.data.length)
           state.data = [new Array(state.headers.length).fill("")];
-        if (Object.keys(state.cellColors).length > 0 || state.hiddenRows.size > 0) {
+        if (Object.keys(state.cellColors).length > 0 || state.hiddenRows.size > 0 || state.wrapRows.size > 0) {
           const origToNew = new Map(keptIdx.map((oi, ni) => [oi, ni]));
           if (Object.keys(state.cellColors).length > 0) {
             const newCC = {};
@@ -8799,14 +8813,13 @@
             }
             state.cellColors = newCC;
           }
-          if (state.hiddenRows.size > 0) {
-            const newHR = new Set();
-            for (const r of state.hiddenRows) {
-              const newR = origToNew.get(r);
-              if (newR !== undefined) newHR.add(newR);
-            }
-            state.hiddenRows = newHR;
-          }
+          const remapSet = (s) => {
+            const ns = new Set();
+            for (const r of s) { const n = origToNew.get(r); if (n !== undefined) ns.add(n); }
+            return ns;
+          };
+          state.hiddenRows = remapSet(state.hiddenRows);
+          state.wrapRows   = remapSet(state.wrapRows);
         }
         const removed = before - state.data.length;
         markDirty();
