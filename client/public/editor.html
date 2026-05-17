@@ -4739,6 +4739,7 @@
         };
         inp.onblur = () => finish();
         inp.onkeydown = (ev) => {
+          if (ev.isComposing) return; // IME入力確定前はナビゲーションキーを無視
           if (ev.key === "Enter") {
             ev.preventDefault();
             ev.stopPropagation();
@@ -7076,6 +7077,8 @@
           startW = th ? th.offsetWidth : 100;
         const minW = 20;
         const targetCols = getSelectedCols(col);
+        const origWidths = {};
+        targetCols.forEach((c) => { origWidths[c] = state.colWidths[c]; });
         document.body.classList.add("col-resizing");
         let _rafPending = false;
         const move = (em) => {
@@ -7108,13 +7111,24 @@
           document.body.classList.remove("col-resizing");
           document.removeEventListener("mousemove", move);
           document.removeEventListener("mouseup", up);
-          // ドラッグ終了時だけ完全再描画
+          document.removeEventListener("keydown", onKey);
           renderHeader();
           state.forceRender = true;
           renderBody();
         };
+        const onKey = (ek) => {
+          if (ek.key === "Escape") {
+            // Escapeでリサイズ中断: 元の幅に戻す
+            targetCols.forEach((c) => {
+              if (origWidths[c] === undefined) delete state.colWidths[c];
+              else state.colWidths[c] = origWidths[c];
+            });
+            up();
+          }
+        };
         document.addEventListener("mousemove", move);
         document.addEventListener("mouseup", up);
+        document.addEventListener("keydown", onKey);
       }
 
       let _canvasCtx = null;
@@ -7277,11 +7291,26 @@
       function deleteEmptyRows() {
         saveUndo();
         const before = state.data.length;
-        state.data = state.data.filter((row) =>
-          row.some((cell) => cell !== ""),
-        );
+        const keptIdx = [];
+        state.data = state.data.filter((row, origIdx) => {
+          if (row.some((cell) => cell !== "")) {
+            keptIdx.push(origIdx);
+            return true;
+          }
+          return false;
+        });
         if (!state.data.length)
           state.data = [new Array(state.headers.length).fill("")];
+        if (Object.keys(state.cellColors).length > 0) {
+          const origToNew = new Map(keptIdx.map((oi, ni) => [oi, ni]));
+          const newCC = {};
+          for (const [k, v] of Object.entries(state.cellColors)) {
+            const sep = k.indexOf(",");
+            const newRi = origToNew.get(parseInt(k.slice(0, sep)));
+            if (newRi !== undefined) newCC[newRi + k.slice(sep)] = v;
+          }
+          state.cellColors = newCC;
+        }
         const removed = before - state.data.length;
         if (removed > 0) {
           markDirty();
@@ -8683,14 +8712,26 @@
         saveUndo();
         const seen = new Set();
         const before = state.data.length;
-        state.data = state.data.filter((row) => {
+        const keptIdx = [];
+        state.data = state.data.filter((row, origIdx) => {
           const key = row.join("\t");
           if (seen.has(key)) return false;
           seen.add(key);
+          keptIdx.push(origIdx);
           return true;
         });
         if (!state.data.length)
           state.data = [new Array(state.headers.length).fill("")];
+        if (Object.keys(state.cellColors).length > 0) {
+          const origToNew = new Map(keptIdx.map((oi, ni) => [oi, ni]));
+          const newCC = {};
+          for (const [k, v] of Object.entries(state.cellColors)) {
+            const sep = k.indexOf(",");
+            const newRi = origToNew.get(parseInt(k.slice(0, sep)));
+            if (newRi !== undefined) newCC[newRi + k.slice(sep)] = v;
+          }
+          state.cellColors = newCC;
+        }
         const removed = before - state.data.length;
         markDirty();
         applyFilters();
