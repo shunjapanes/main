@@ -7908,8 +7908,8 @@
             state.headers.splice(vIdx, 1);
             if (state.displayHeaders) state.displayHeaders.splice(vIdx, 1);
             state.data.forEach(row => row.splice(vIdx, 1));
-            if (state.columnFilters && state.columnFilters[vIdx]) delete state.columnFilters[vIdx];
-            if (state.colWidths && state.colWidths[vIdx] != null) delete state.colWidths[vIdx];
+            // shiftColIndices で selected/range/cellColors 等を更新（columnFilters/colWidths も含む）
+            shiftColIndices(vIdx, -1);
           }
           state.sejVirtualCols = null;
           applyFilters();
