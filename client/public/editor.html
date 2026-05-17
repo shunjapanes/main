@@ -2394,6 +2394,7 @@
         // 列が足りなければ自動追加
         while (c >= state.headers.length) {
           state.headers.push("列" + (state.headers.length + 1));
+          if (state.displayHeaders) state.displayHeaders.push(null);
           state.data.forEach((row) => row.push(""));
         }
         const row = state.data[r];
@@ -7424,6 +7425,11 @@
           return;
         }
         const r = n - 1;
+        const vr = getVisibleRows();
+        if (!vr._direct && !vr._indices.includes(r)) {
+          setStatus(`⚠ 行 ${n} は非表示またはフィルターで除外されています`);
+          return;
+        }
         moveTo(r, state.selected?.col ?? 0);
         state.forceRender = true;
         renderBody();
@@ -8566,6 +8572,11 @@
         state.filterVisible = false;
         els.filterClear.style.display = "none";
         els.filterExport.style.display = "none";
+        els.filterToggle.style.background = "";
+        els.filterToggle.style.borderColor = "";
+        els.filterToggle.style.color = "";
+        els.filterToggle.setAttribute("aria-pressed", "false");
+        els.filterToggle.setAttribute("aria-label", "フィルター行を表示");
         // ソート解除
         state.sortCol = -1;
         state.sortAsc = true;
