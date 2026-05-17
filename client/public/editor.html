@@ -7022,6 +7022,7 @@
         state._dupSet = null; // 行インデックスが変わる可能性があるためクリア
         markDirty();
         applyFilters();
+        if (els.search.value) execSearch();
         state.forceRender = true;
         renderHeader();
         renderBody();
@@ -7034,6 +7035,7 @@
         state._dupSet = null;
         markDirty();
         applyFilters();
+        if (els.search.value) execSearch();
         state.forceRender = true;
         renderHeader();
         renderBody();
