@@ -2464,6 +2464,7 @@
         t.wrapRows = new Set(state.wrapRows);
         t.conditionalHL = state.conditionalHL;
         t.cellColors = { ...state.cellColors };
+        t.encoding = state.encoding;
       }
 
       function switchTab(idx) {
@@ -2515,6 +2516,7 @@
           state.wrapRows = t.wrapRows ? new Set(t.wrapRows) : new Set();
           state.conditionalHL = t.conditionalHL || false;
           state.cellColors = t.cellColors ? { ...t.cellColors } : {};
+          if (t.encoding) state.encoding = t.encoding;
           // filteredIndicesをレンダリングなしで再計算
           _visibleRowsCache = null;
           const fkeys = Object.keys(state.columnFilters);
@@ -3017,6 +3019,7 @@
             sortAsc: true,
             sortKeys: [],
             headerMode: state.headerMode,
+            encoding: state.encoding,
             dirty: false,
             _rawText: text, // 遅延復元用にrawTextを保持
           };
@@ -3536,6 +3539,7 @@
         state.selected = null;
         state.range = null;
         state.anchor = null;
+        state._dupSet = null; // 行インデックスが変わるためクリア
         applyFilters();
         markDirty();
         renderHeader();
@@ -5088,6 +5092,7 @@
           saveUndo();
           _shiftRowColors(state.selected.row, 1);
           _shiftHiddenRows(state.selected.row, 1);
+          state._dupSet = null;
           state.data.splice(state.selected.row, 0, new Array(state.headers.length).fill(""));
           markDirty();
           applyFilters();
@@ -5812,6 +5817,7 @@
           : state.data.length;
         _shiftRowColors(insertAt, state.copiedRows.length);
         _shiftHiddenRows(insertAt, state.copiedRows.length);
+        state._dupSet = null;
         state.copiedRows.forEach((r, i) => {
           const row = [...r];
           while (row.length < state.headers.length) row.push("");
@@ -6179,6 +6185,7 @@
                   saveUndo();
                   _shiftRowColors(row, 1);
                   _shiftHiddenRows(row, 1);
+                  state._dupSet = null;
                   state.data.splice(
                     row,
                     0,
@@ -6197,6 +6204,7 @@
                   saveUndo();
                   _shiftRowColors(row + 1, 1);
                   _shiftHiddenRows(row + 1, 1);
+                  state._dupSet = null;
                   state.data.splice(
                     row + 1,
                     0,
@@ -6339,6 +6347,7 @@
                   state.selected = null;
                   state.range = null;
                   state.anchor = null;
+                  state._dupSet = null;
                   applyFilters();
                   markDirty();
                   renderHeader();
@@ -6374,6 +6383,7 @@
                   state.selected = null;
                   state.range = null;
                   state.anchor = null;
+                  state._dupSet = null;
                   applyFilters();
                   markDirty();
                   renderHeader();
@@ -6753,6 +6763,7 @@
         const at = state.selected ? state.selected.row + 1 : state.data.length;
         _shiftRowColors(at, 1);
         _shiftHiddenRows(at, 1);
+        state._dupSet = null;
         state.data.splice(at, 0, Array(state.headers.length).fill(""));
         markDirty();
         applyFilters();
@@ -6774,6 +6785,7 @@
         if (state.data.length <= delCount) return;
         saveUndo();
         state.data.splice(r1, delCount);
+        state._dupSet = null;
         _deleteRangeHiddenRows(r1, r2);
         // 削除行の色を除去し、後続行のインデックスをシフト
         const newCC = {};
@@ -7532,6 +7544,7 @@
         saveUndo();
         _shiftRowColors(r + 1, 1);
         _shiftHiddenRows(r + 1, 1);
+        state._dupSet = null;
         state.data.splice(r + 1, 0, [...state.data[r]]);
         state.selected.row = r + 1;
         markDirty();
@@ -9326,8 +9339,8 @@
               var tab = {
                 fileName: fname, headers: state.headers, data: state.data,
                 delimiter: state.delimiter, colWidths: {}, sortCol: -1, sortAsc: true,
-                sortKeys: [], headerMode: state.headerMode, dirty: false,
-                _rawText: payload.content
+                sortKeys: [], headerMode: state.headerMode, encoding: state.encoding,
+                dirty: false, _rawText: payload.content
               };
               var cur = state.tabs[state.activeTab];
               if (cur && cur._isBlankSheet === true && !cur.dirty) {
@@ -9381,6 +9394,7 @@
             saveUndo();
             _shiftRowColors(r, 1);
             _shiftHiddenRows(r, 1);
+            state._dupSet = null;
             state.data.splice(r, 0, new Array(state.headers.length).fill(''));
             markDirty(); applyFilters(); state.forceRender = true; renderBody();
             moveTo(r, state.selected.col);
