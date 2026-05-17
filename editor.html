@@ -7022,7 +7022,7 @@
         state._dupSet = null; // 行インデックスが変わる可能性があるためクリア
         markDirty();
         applyFilters();
-        if (els.search.value) execSearch();
+        if (els.search.value) _refreshSearchHits();
         state.forceRender = true;
         renderHeader();
         renderBody();
@@ -7035,11 +7035,37 @@
         state._dupSet = null;
         markDirty();
         applyFilters();
-        if (els.search.value) execSearch();
+        if (els.search.value) _refreshSearchHits();
         state.forceRender = true;
         renderHeader();
         renderBody();
         updateHiddenStatus();
+      }
+      function _refreshSearchHits() {
+        // undo/redo後に検索ヒットをカーソル移動なしで再構築する
+        const q = els.search.value;
+        if (!q) { state.searchHits = []; state.searchIdx = -1; _hitSet.clear(); els.count.textContent = ""; return; }
+        const matcher = buildSearchMatcher(q);
+        if (!matcher) return;
+        state.searchHits = [];
+        const vr = getVisibleRows();
+        const iter = vr._direct
+          ? Array.from({ length: state.data.length }, (_, k) => k)
+          : vr._indices;
+        for (const r of iter)
+          for (let c = 0; c < state.headers.length; c++)
+            if (matcher(safeGet(r, c))) state.searchHits.push({ row: r, col: c });
+        rebuildHitSet();
+        // 現在の選択セルが依然ヒットに含まれていれば searchIdx を維持
+        if (state.selected) {
+          const idx = state.searchHits.findIndex(h => h.row === state.selected.row && h.col === state.selected.col);
+          state.searchIdx = idx >= 0 ? idx : (state.searchHits.length > 0 ? 0 : -1);
+        } else {
+          state.searchIdx = state.searchHits.length > 0 ? 0 : -1;
+        }
+        els.count.textContent = state.searchHits.length > 0
+          ? `${state.searchIdx + 1}/${state.searchHits.length}件`
+          : `${state.searchHits.length}件`;
       }
 
       function buildSearchMatcher(q) {
