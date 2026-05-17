@@ -5042,6 +5042,7 @@
         if (e.altKey && shiftKey && key === "ArrowUp" && state.selected) {
           e.preventDefault();
           saveUndo();
+          _shiftRowColors(state.selected.row, 1);
           state.data.splice(state.selected.row, 0, new Array(state.headers.length).fill(""));
           markDirty();
           applyFilters();
@@ -5764,6 +5765,7 @@
         const insertAt = state.selected
           ? state.selected.row + 1
           : state.data.length;
+        _shiftRowColors(insertAt, state.copiedRows.length);
         state.copiedRows.forEach((r, i) => {
           const row = [...r];
           while (row.length < state.headers.length) row.push("");
@@ -6125,6 +6127,7 @@
                 key: "Alt+Shift+↑",
                 action: () => {
                   saveUndo();
+                  _shiftRowColors(row, 1);
                   state.data.splice(
                     row,
                     0,
@@ -6141,6 +6144,7 @@
                 key: "Ctrl+Enter",
                 action: () => {
                   saveUndo();
+                  _shiftRowColors(row + 1, 1);
                   state.data.splice(
                     row + 1,
                     0,
@@ -6693,6 +6697,7 @@
       function addRowBelow() {
         saveUndo();
         const at = state.selected ? state.selected.row + 1 : state.data.length;
+        _shiftRowColors(at, 1);
         state.data.splice(at, 0, Array(state.headers.length).fill(""));
         markDirty();
         applyFilters();
@@ -6714,6 +6719,17 @@
         if (state.data.length <= delCount) return;
         saveUndo();
         state.data.splice(r1, delCount);
+        // 削除行の色を除去し、後続行のインデックスをシフト
+        const newCC = {};
+        for (const [k, v] of Object.entries(state.cellColors)) {
+          const sep = k.indexOf(",");
+          const ri = parseInt(k.slice(0, sep));
+          const ci = k.slice(sep);
+          if (ri >= r1 && ri <= r2) continue;
+          const newRi = ri > r2 ? ri - delCount : ri;
+          newCC[newRi + ci] = v;
+        }
+        state.cellColors = newCC;
         const maxRow = state.data.length - 1;
         state.selected = { row: Math.min(r1, maxRow), col: state.selected?.col ?? 0 };
         state.anchor = { ...state.selected };
@@ -6816,6 +6832,45 @@
           if (state.range.c1 >= insertedCol) state.range.c1 += delta;
           if (state.range.c2 >= insertedCol) state.range.c2 += delta;
         }
+        // cellColors
+        const newCellColors = {};
+        for (const [k, v] of Object.entries(state.cellColors)) {
+          const sep = k.indexOf(",");
+          const ri = k.slice(0, sep);
+          const ci = parseInt(k.slice(sep + 1));
+          if (delta === -1 && ci === insertedCol) continue;
+          const newCi = ci >= insertedCol ? ci + delta : ci;
+          if (newCi >= 0) newCellColors[`${ri},${newCi}`] = v;
+        }
+        state.cellColors = newCellColors;
+      }
+
+      function _shiftRowColors(insertAt, count) {
+        // 行挿入: rows >= insertAt を +count シフト
+        const newCC = {};
+        for (const [k, v] of Object.entries(state.cellColors)) {
+          const sep = k.indexOf(",");
+          const ri = parseInt(k.slice(0, sep));
+          const ci = k.slice(sep);
+          const newRi = ri >= insertAt ? ri + count : ri;
+          newCC[newRi + ci] = v;
+        }
+        state.cellColors = newCC;
+      }
+      function _swapRowColors(r1, r2) {
+        // moveRowUp/Down: 2行の色を交換
+        const newCC = { ...state.cellColors };
+        const cols = new Set(
+          Object.keys(state.cellColors)
+            .map((k) => k.slice(k.indexOf(",")))
+        );
+        for (const ci of cols) {
+          const a = state.cellColors[r1 + ci];
+          const b = state.cellColors[r2 + ci];
+          if (a) newCC[r2 + ci] = a; else delete newCC[r2 + ci];
+          if (b) newCC[r1 + ci] = b; else delete newCC[r1 + ci];
+        }
+        state.cellColors = newCC;
       }
 
       function cloneColumnFilters(cf) {
@@ -7245,6 +7300,7 @@
         if (!state.selected || state.selected.row <= 0) return;
         const r = state.selected.row;
         saveUndo();
+        _swapRowColors(r - 1, r);
         [state.data[r - 1], state.data[r]] = [state.data[r], state.data[r - 1]];
         state.selected.row = r - 1;
         if (state.anchor) state.anchor.row = r - 1;
@@ -7258,6 +7314,7 @@
           return;
         const r = state.selected.row;
         saveUndo();
+        _swapRowColors(r, r + 1);
         [state.data[r], state.data[r + 1]] = [state.data[r + 1], state.data[r]];
         state.selected.row = r + 1;
         if (state.anchor) state.anchor.row = r + 1;
@@ -7272,6 +7329,7 @@
         if (!state.selected) return;
         const r = state.selected.row;
         saveUndo();
+        _shiftRowColors(r + 1, 1);
         state.data.splice(r + 1, 0, [...state.data[r]]);
         state.selected.row = r + 1;
         markDirty();
@@ -9095,6 +9153,7 @@
             if (!_ribRequireSel('上に行挿入')) return;
             var r = state.selected.row;
             saveUndo();
+            _shiftRowColors(r, 1);
             state.data.splice(r, 0, new Array(state.headers.length).fill(''));
             markDirty(); applyFilters(); state.forceRender = true; renderBody();
             moveTo(r, state.selected.col);
