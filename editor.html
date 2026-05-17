@@ -2987,6 +2987,26 @@
           parseData(text);
           clearAutoDropColumns();
           applyHeaderMapping();
+          // 前タブの表示状態が新ファイルに引き継がれないようリセット
+          state.cellColors = {};
+          state.hiddenRows = new Set();
+          state.hiddenCols = new Set();
+          state.wrapRows.clear();
+          state.wrapCells = false;
+          state.conditionalHL = false;
+          state.columnFilters = {};
+          state.filteredIndices = null;
+          state.filterVisible = false;
+          state.freezeCols = 0;
+          state.sortCol = -1;
+          state.sortAsc = true;
+          state.sortKeys = [];
+          state.undoStack = [];
+          state.redoStack = [];
+          state.selected = null;
+          state.range = null;
+          state.anchor = null;
+          _visibleRowsCache = null;
           const tab = {
             fileName: state.fileName,
             headers: state.headers,
@@ -6879,21 +6899,42 @@
           if (newCi >= 0) newCellColors[`${ri},${newCi}`] = v;
         }
         state.cellColors = newCellColors;
+        // sejVirtualCols.indices
+        if (state.sejVirtualCols) {
+          state.sejVirtualCols.indices = state.sejVirtualCols.indices
+            .filter(ci => !(delta === -1 && ci === insertedCol))
+            .map(ci => ci >= insertedCol ? ci + delta : ci)
+            .filter(ci => ci >= 0);
+          if (!state.sejVirtualCols.indices.length) state.sejVirtualCols = null;
+        }
       }
       function _sortDataUpdateColors(sortedWithOrigIdx, sortHeaderExists) {
-        if (!Object.keys(state.cellColors).length) return;
         const base = sortHeaderExists ? 1 : 0;
         const origToNew = new Map(sortedWithOrigIdx.map((x, ni) => [x.origIdx, base + ni]));
-        const newCC = {};
-        for (const [k, v] of Object.entries(state.cellColors)) {
-          const sep = k.indexOf(",");
-          const ri = parseInt(k.slice(0, sep));
-          const ci = k.slice(sep);
-          if (sortHeaderExists && ri === 0) { newCC[k] = v; continue; }
-          const newRi = origToNew.get(ri);
-          if (newRi !== undefined) newCC[newRi + ci] = v;
+        if (Object.keys(state.cellColors).length) {
+          const newCC = {};
+          for (const [k, v] of Object.entries(state.cellColors)) {
+            const sep = k.indexOf(",");
+            const ri = parseInt(k.slice(0, sep));
+            const ci = k.slice(sep);
+            if (sortHeaderExists && ri === 0) { newCC[k] = v; continue; }
+            const newRi = origToNew.get(ri);
+            if (newRi !== undefined) newCC[newRi + ci] = v;
+          }
+          state.cellColors = newCC;
         }
-        state.cellColors = newCC;
+        const remapRowSet = (s) => {
+          if (!s.size) return s;
+          const ns = new Set();
+          for (const r of s) {
+            if (sortHeaderExists && r === 0) { ns.add(0); continue; }
+            const newR = origToNew.get(r);
+            if (newR !== undefined) ns.add(newR);
+          }
+          return ns;
+        };
+        state.hiddenRows = remapRowSet(state.hiddenRows);
+        state.wrapRows   = remapRowSet(state.wrapRows);
       }
 
       function _shiftRowColors(insertAt, count) {
@@ -6984,6 +7025,7 @@
           columnFilters: cloneColumnFilters(state.columnFilters),
           hiddenRows: new Set(state.hiddenRows),
           hiddenCols: new Set(state.hiddenCols),
+          wrapRows: new Set(state.wrapRows),
           headerMode: state.headerMode,
           cellColors: { ...state.cellColors },
         };
@@ -6999,6 +7041,7 @@
         state.columnFilters = s.columnFilters || {};
         state.hiddenRows = s.hiddenRows || new Set();
         state.hiddenCols = s.hiddenCols || new Set();
+        state.wrapRows = s.wrapRows ? new Set(s.wrapRows) : new Set();
         state.headerMode = s.headerMode || "firstRow";
         state.cellColors = s.cellColors ? { ...s.cellColors } : {};
         applyHeaderMapping();
