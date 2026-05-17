@@ -4929,8 +4929,9 @@
             e.preventDefault();
             if (els.search.value !== _lastSearched) {
               // クエリが変わっており未検索：即実行（execSearch内でhit[0]へ移動）
+              // Shift+Enterの場合、execSearch()がmoveSearch(1)で先頭に移動した後に
+              // 末尾に移動するのが自然なので execSearch 後に再度後退は行わない
               execSearch();
-              if (e.shiftKey && state.searchHits.length > 1) moveSearch(-1);
             } else {
               // 同クエリの繰り返しナビゲート
               moveSearch(e.shiftKey ? -1 : 1);
@@ -6955,6 +6956,7 @@
         if (!state.undoStack.length) return;
         state.redoStack.push(cloneState());
         restoreState(state.undoStack.pop());
+        state._dupSet = null; // 行インデックスが変わる可能性があるためクリア
         markDirty();
         applyFilters();
         state.forceRender = true;
@@ -6966,6 +6968,7 @@
         if (!state.redoStack.length) return;
         state.undoStack.push(cloneState());
         restoreState(state.redoStack.pop());
+        state._dupSet = null;
         markDirty();
         applyFilters();
         state.forceRender = true;
