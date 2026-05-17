@@ -2464,6 +2464,7 @@
         t.wrapRows = new Set(state.wrapRows);
         t.conditionalHL = state.conditionalHL;
         t.cellColors = { ...state.cellColors };
+        t.encoding = state.encoding;
       }
 
       function switchTab(idx) {
@@ -2515,6 +2516,7 @@
           state.wrapRows = t.wrapRows ? new Set(t.wrapRows) : new Set();
           state.conditionalHL = t.conditionalHL || false;
           state.cellColors = t.cellColors ? { ...t.cellColors } : {};
+          if (t.encoding) state.encoding = t.encoding;
           // filteredIndicesをレンダリングなしで再計算
           _visibleRowsCache = null;
           const fkeys = Object.keys(state.columnFilters);
@@ -3017,6 +3019,7 @@
             sortAsc: true,
             sortKeys: [],
             headerMode: state.headerMode,
+            encoding: state.encoding,
             dirty: false,
             _rawText: text, // 遅延復元用にrawTextを保持
           };
@@ -9326,8 +9329,8 @@
               var tab = {
                 fileName: fname, headers: state.headers, data: state.data,
                 delimiter: state.delimiter, colWidths: {}, sortCol: -1, sortAsc: true,
-                sortKeys: [], headerMode: state.headerMode, dirty: false,
-                _rawText: payload.content
+                sortKeys: [], headerMode: state.headerMode, encoding: state.encoding,
+                dirty: false, _rawText: payload.content
               };
               var cur = state.tabs[state.activeTab];
               if (cur && cur._isBlankSheet === true && !cur.dirty) {
