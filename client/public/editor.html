@@ -4784,37 +4784,39 @@
       }
 
       function editHeaderComment(col) {
+        document.querySelector("._comment-edit-ov")?.remove();
         const origKey = state.headers[col]?.trim();
         const current = state.headerComments[origKey] || "";
         const displayName = getDisplayHeader(col);
 
         const overlay = document.createElement("div");
+        overlay.className = "_comment-edit-ov";
         overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999;display:flex;align-items:center;justify-content:center;";
         const dlg = document.createElement("div");
         dlg.style.cssText = "background:#fff;border-radius:6px;padding:16px;width:90vw;max-width:400px;box-shadow:0 4px 20px rgba(0,0,0,0.3);";
         dlg.innerHTML = `
           <h3 style="margin:0 0 8px;font-size:13px;">「${escHtml(displayName)}」のメモ編集</h3>
           <p style="margin:0 0 6px;font-size:11px;color:#666;">${escHtml(origKey)}</p>
-          <textarea id="comment-edit-area" style="width:100%;height:120px;border:1px solid #ccc;border-radius:3px;padding:6px;font-size:12px;font-family:var(--font-ui);resize:vertical;">${escHtml(current)}</textarea>
+          <textarea class="_comment-edit-area" style="width:100%;height:120px;border:1px solid #ccc;border-radius:3px;padding:6px;font-size:12px;font-family:var(--font-ui);resize:vertical;">${escHtml(current)}</textarea>
           <div style="margin-top:8px;text-align:right;">
-            <button type="button" id="comment-cancel" style="padding:4px 12px;font-size:12px;cursor:pointer;margin-right:6px;">キャンセル</button>
-            <button type="button" id="comment-clear" style="padding:4px 12px;font-size:12px;cursor:pointer;color:#d33;margin-right:6px;">クリア</button>
-            <button type="button" id="comment-save" style="padding:4px 12px;font-size:12px;background:var(--accent);color:#fff;border:none;border-radius:3px;cursor:pointer;">保存</button>
+            <button type="button" class="_comment-cancel" style="padding:4px 12px;font-size:12px;cursor:pointer;margin-right:6px;">キャンセル</button>
+            <button type="button" class="_comment-clear" style="padding:4px 12px;font-size:12px;cursor:pointer;color:#d33;margin-right:6px;">クリア</button>
+            <button type="button" class="_comment-save" style="padding:4px 12px;font-size:12px;background:var(--accent);color:#fff;border:none;border-radius:3px;cursor:pointer;">保存</button>
           </div>`;
         overlay.appendChild(dlg);
         document.body.appendChild(overlay);
 
-        const textarea = dlg.querySelector("#comment-edit-area");
+        const textarea = dlg.querySelector("._comment-edit-area");
         textarea.focus();
         overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
-        dlg.querySelector("#comment-cancel").onclick = () => overlay.remove();
-        dlg.querySelector("#comment-clear").onclick = () => {
+        dlg.querySelector("._comment-cancel").onclick = () => overlay.remove();
+        dlg.querySelector("._comment-clear").onclick = () => {
           delete state.headerComments[origKey];
           saveHeaderMapSettings();
           renderHeader();
           overlay.remove();
         };
-        dlg.querySelector("#comment-save").onclick = () => {
+        dlg.querySelector("._comment-save").onclick = () => {
           const nv = textarea.value;
           if (nv) state.headerComments[origKey] = nv;
           else delete state.headerComments[origKey];
@@ -4835,6 +4837,7 @@
 
       // ===== 辞書エディター =====
       function openDictEditor() {
+        closeDictEditor();
         // 現在のヘッダーに関連するマッピングを表示
         const entries = [];
         const allKeys = new Set([...Object.keys(DEFAULT_HEADER_DICT), ...Object.keys(state.headerDict)]);
@@ -5048,6 +5051,7 @@
           e.preventDefault();
           saveUndo();
           _shiftRowColors(state.selected.row, 1);
+          _shiftHiddenRows(state.selected.row, 1);
           state.data.splice(state.selected.row, 0, new Array(state.headers.length).fill(""));
           markDirty();
           applyFilters();
@@ -5771,6 +5775,7 @@
           ? state.selected.row + 1
           : state.data.length;
         _shiftRowColors(insertAt, state.copiedRows.length);
+        _shiftHiddenRows(insertAt, state.copiedRows.length);
         state.copiedRows.forEach((r, i) => {
           const row = [...r];
           while (row.length < state.headers.length) row.push("");
@@ -6133,6 +6138,7 @@
                 action: () => {
                   saveUndo();
                   _shiftRowColors(row, 1);
+                  _shiftHiddenRows(row, 1);
                   state.data.splice(
                     row,
                     0,
@@ -6150,6 +6156,7 @@
                 action: () => {
                   saveUndo();
                   _shiftRowColors(row + 1, 1);
+                  _shiftHiddenRows(row + 1, 1);
                   state.data.splice(
                     row + 1,
                     0,
@@ -6705,6 +6712,7 @@
         saveUndo();
         const at = state.selected ? state.selected.row + 1 : state.data.length;
         _shiftRowColors(at, 1);
+        _shiftHiddenRows(at, 1);
         state.data.splice(at, 0, Array(state.headers.length).fill(""));
         markDirty();
         applyFilters();
@@ -6726,6 +6734,7 @@
         if (state.data.length <= delCount) return;
         saveUndo();
         state.data.splice(r1, delCount);
+        _deleteRangeHiddenRows(r1, r2);
         // 削除行の色を除去し、後続行のインデックスをシフト
         const newCC = {};
         for (const [k, v] of Object.entries(state.cellColors)) {
@@ -6893,6 +6902,30 @@
           if (b) newCC[r1 + ci] = b; else delete newCC[r1 + ci];
         }
         state.cellColors = newCC;
+      }
+
+      function _shiftHiddenRows(insertAt, count) {
+        if (!state.hiddenRows.size) return;
+        const newHR = new Set();
+        for (const r of state.hiddenRows) newHR.add(r >= insertAt ? r + count : r);
+        state.hiddenRows = newHR;
+      }
+      function _swapHiddenRows(r1, r2) {
+        if (!state.hiddenRows.size) return;
+        const h1 = state.hiddenRows.has(r1), h2 = state.hiddenRows.has(r2);
+        if (h1 === h2) return;
+        if (h1) { state.hiddenRows.delete(r1); state.hiddenRows.add(r2); }
+        else    { state.hiddenRows.delete(r2); state.hiddenRows.add(r1); }
+      }
+      function _deleteRangeHiddenRows(r1, r2) {
+        if (!state.hiddenRows.size) return;
+        const delCount = r2 - r1 + 1;
+        const newHR = new Set();
+        for (const r of state.hiddenRows) {
+          if (r >= r1 && r <= r2) continue;
+          newHR.add(r > r2 ? r - delCount : r);
+        }
+        state.hiddenRows = newHR;
       }
 
       function cloneColumnFilters(cf) {
@@ -7314,6 +7347,15 @@
           }
           state.cellColors = newCC;
         }
+        if (state.hiddenRows.size > 0) {
+          const origToNew = new Map(keptIdx.map((oi, ni) => [oi, ni]));
+          const newHR = new Set();
+          for (const r of state.hiddenRows) {
+            const newR = origToNew.get(r);
+            if (newR !== undefined) newHR.add(newR);
+          }
+          state.hiddenRows = newHR;
+        }
         const removed = before - state.data.length;
         if (removed > 0) {
           markDirty();
@@ -7355,6 +7397,7 @@
         const r = state.selected.row;
         saveUndo();
         _swapRowColors(r - 1, r);
+        _swapHiddenRows(r - 1, r);
         [state.data[r - 1], state.data[r]] = [state.data[r], state.data[r - 1]];
         state.selected.row = r - 1;
         if (state.anchor) state.anchor.row = r - 1;
@@ -7369,6 +7412,7 @@
         const r = state.selected.row;
         saveUndo();
         _swapRowColors(r, r + 1);
+        _swapHiddenRows(r, r + 1);
         [state.data[r], state.data[r + 1]] = [state.data[r + 1], state.data[r]];
         state.selected.row = r + 1;
         if (state.anchor) state.anchor.row = r + 1;
@@ -7384,6 +7428,7 @@
         const r = state.selected.row;
         saveUndo();
         _shiftRowColors(r + 1, 1);
+        _shiftHiddenRows(r + 1, 1);
         state.data.splice(r + 1, 0, [...state.data[r]]);
         state.selected.row = r + 1;
         markDirty();
@@ -7757,21 +7802,22 @@
         if (state.sejMaster) {
           const fn = state.sejMaster.fileName || "(不明)";
           // confirm()はiframe内でブロックされる場合があるためカスタムモーダルを使用
+          document.querySelector("._sej-confirm-ov")?.remove();
           const _ov = document.createElement("div");
-          _ov.className = "modal-overlay";
+          _ov.className = "modal-overlay _sej-confirm-ov";
           _ov.innerHTML = `<div class="modal-dialog">
             <div class="modal-title">SEJ連携を解除しますか？</div>
             <p style="font-size:13px;margin:8px 0 4px">現在のマスタ: <strong>${escHtml(fn)}</strong><br>解除するとマスタデータは破棄されます。</p>
             <div class="modal-btns">
-              <button id="_sej-cancel" class="btn-default">キャンセル</button>
-              <button id="_sej-ok" class="btn-primary">解除する</button>
+              <button class="_sej-cancel btn-default">キャンセル</button>
+              <button class="_sej-ok btn-primary">解除する</button>
             </div>
           </div>`;
           document.body.appendChild(_ov);
-          _ov.querySelector("#_sej-cancel").onclick = () => _ov.remove();
-          _ov.querySelector("#_sej-ok").onclick = () => { _ov.remove(); _doSejDisconnect(); };
+          _ov.querySelector("._sej-cancel").onclick = () => _ov.remove();
+          _ov.querySelector("._sej-ok").onclick = () => { _ov.remove(); _doSejDisconnect(); };
           _ov.onkeydown = (e) => { if (e.key === "Escape") _ov.remove(); };
-          _ov.querySelector("#_sej-cancel").focus();
+          _ov.querySelector("._sej-cancel").focus();
           return;
         }
         setStatus("SEJマスタファイルを選択してください...");
@@ -8725,15 +8771,25 @@
         });
         if (!state.data.length)
           state.data = [new Array(state.headers.length).fill("")];
-        if (Object.keys(state.cellColors).length > 0) {
+        if (Object.keys(state.cellColors).length > 0 || state.hiddenRows.size > 0) {
           const origToNew = new Map(keptIdx.map((oi, ni) => [oi, ni]));
-          const newCC = {};
-          for (const [k, v] of Object.entries(state.cellColors)) {
-            const sep = k.indexOf(",");
-            const newRi = origToNew.get(parseInt(k.slice(0, sep)));
-            if (newRi !== undefined) newCC[newRi + k.slice(sep)] = v;
+          if (Object.keys(state.cellColors).length > 0) {
+            const newCC = {};
+            for (const [k, v] of Object.entries(state.cellColors)) {
+              const sep = k.indexOf(",");
+              const newRi = origToNew.get(parseInt(k.slice(0, sep)));
+              if (newRi !== undefined) newCC[newRi + k.slice(sep)] = v;
+            }
+            state.cellColors = newCC;
           }
-          state.cellColors = newCC;
+          if (state.hiddenRows.size > 0) {
+            const newHR = new Set();
+            for (const r of state.hiddenRows) {
+              const newR = origToNew.get(r);
+              if (newR !== undefined) newHR.add(newR);
+            }
+            state.hiddenRows = newHR;
+          }
         }
         const removed = before - state.data.length;
         markDirty();
@@ -9222,6 +9278,7 @@
             var r = state.selected.row;
             saveUndo();
             _shiftRowColors(r, 1);
+            _shiftHiddenRows(r, 1);
             state.data.splice(r, 0, new Array(state.headers.length).fill(''));
             markDirty(); applyFilters(); state.forceRender = true; renderBody();
             moveTo(r, state.selected.col);
