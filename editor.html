@@ -5978,11 +5978,15 @@
             for (let c = scope.c1; c <= scope.c2; c++)
               if (matchFn(safeGet(r, c))) cnt++;
         } else {
-          state.data.forEach((row) =>
-            row.forEach((v) => {
+          const filteredSetCnt = state.filteredIndices ? new Set(state.filteredIndices) : null;
+          state.data.forEach((row, r) => {
+            if (state.hiddenRows.has(r)) return;
+            if (filteredSetCnt && !filteredSetCnt.has(r)) return;
+            row.forEach((v, c) => {
+              if (state.hiddenCols.has(c)) return;
               if (matchFn(v)) cnt++;
-            }),
-          );
+            });
+          });
         }
         if (cnt === 0) {
           setStatus("該当なし");
