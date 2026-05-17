@@ -3416,10 +3416,15 @@
           // firstRow → numbered: ヘッダー行をデータの先頭行に戻す（row 0に挿入）
           _shiftRowColors(0, 1);
           _shiftHiddenRows(0, 1);
+          state._dupSet = null;
           state.data.unshift([...state.headers]);
           state.headers = Array.from({ length: state.headers.length }, (_, i) =>
             String(i + 1),
           );
+          // row 0 挿入に伴い選択位置を +1 シフト
+          if (state.selected) state.selected.row++;
+          if (state.anchor) state.anchor.row++;
+          if (state.range) { state.range.r1++; state.range.r2++; }
           state.headerMode = "numbered";
         } else {
           // numbered → firstRow: データの1行目をヘッダーにする（row 0を削除）
@@ -3430,6 +3435,7 @@
               state.data = [new Array(state.headers.length).fill("")];
             // row 0 削除に伴いインデックスをシフト（hiddenRows/wrapRows）
             _deleteRangeHiddenRows(0, 0);
+            state._dupSet = null;
             // cellColors: row 0 を除去し残りを -1 シフト
             if (Object.keys(state.cellColors).length) {
               const newCC = {};
@@ -3440,6 +3446,14 @@
                 newCC[(ri - 1) + k.slice(sep)] = v;
               }
               state.cellColors = newCC;
+            }
+            // row 0 削除に伴い選択位置を -1 シフト
+            const maxRow = state.data.length - 1;
+            if (state.selected) state.selected.row = Math.max(0, Math.min(state.selected.row - 1, maxRow));
+            if (state.anchor) state.anchor.row = Math.max(0, Math.min(state.anchor.row - 1, maxRow));
+            if (state.range) {
+              state.range.r1 = Math.max(0, state.range.r1 - 1);
+              state.range.r2 = Math.max(0, state.range.r2 - 1);
             }
           }
           state.headerMode = "firstRow";
@@ -5966,11 +5980,16 @@
             }
           return false;
         };
+        const _ffSet = state.filteredIndices ? new Set(state.filteredIndices) : null;
         for (let r = startR; r <= maxR; r++) {
+          if (state.hiddenRows.has(r)) continue;
+          if (_ffSet && !_ffSet.has(r)) continue;
           if (check(r, r === startR ? startC : minC, maxC)) return;
         }
         // 先頭に戻って再検索（スコープ内で折り返し）
         for (let r = minR; r <= startR; r++) {
+          if (state.hiddenRows.has(r)) continue;
+          if (_ffSet && !_ffSet.has(r)) continue;
           if (check(r, minC, r === startR ? startC - 1 : maxC)) return;
         }
         setStatus("見つかりませんでした");
@@ -6024,11 +6043,17 @@
         const useScope = $("replace-scope")?.checked;
         const scope = useScope ? getSearchScope() : null;
         // まず件数をカウント
+        const _scopeFilterSet = state.filteredIndices ? new Set(state.filteredIndices) : null;
         let cnt = 0;
         if (scope) {
-          for (let r = scope.r1; r <= scope.r2; r++)
-            for (let c = scope.c1; c <= scope.c2; c++)
+          for (let r = scope.r1; r <= scope.r2; r++) {
+            if (state.hiddenRows.has(r)) continue;
+            if (_scopeFilterSet && !_scopeFilterSet.has(r)) continue;
+            for (let c = scope.c1; c <= scope.c2; c++) {
+              if (state.hiddenCols.has(c)) continue;
               if (matchFn(safeGet(r, c))) cnt++;
+            }
+          }
         } else {
           const filteredSetCnt = state.filteredIndices ? new Set(state.filteredIndices) : null;
           state.data.forEach((row, r) => {
@@ -6049,11 +6074,15 @@
           return;
         saveUndo();
         if (scope) {
-          for (let r = scope.r1; r <= scope.r2; r++)
+          for (let r = scope.r1; r <= scope.r2; r++) {
+            if (state.hiddenRows.has(r)) continue;
+            if (_scopeFilterSet && !_scopeFilterSet.has(r)) continue;
             for (let c = scope.c1; c <= scope.c2; c++) {
+              if (state.hiddenCols.has(c)) continue;
               const old = safeGet(r, c);
               if (matchFn(old)) safeSet(r, c, old.replace(re, rep));
             }
+          }
         } else {
           // フィルター中は可視行のみ、非表示行はスキップ
           const filteredSetRepl = state.filteredIndices ? new Set(state.filteredIndices) : null;
@@ -6929,6 +6958,14 @@
             .filter(ci => ci >= 0);
           if (!state.sejVirtualCols.indices.length) state.sejVirtualCols = null;
         }
+        // displayHeaders
+        if (state.displayHeaders) {
+          if (delta === 1) {
+            state.displayHeaders.splice(insertedCol, 0, null);
+          } else if (delta === -1) {
+            state.displayHeaders.splice(insertedCol, 1);
+          }
+        }
       }
       function _sortDataUpdateColors(sortedWithOrigIdx, sortHeaderExists) {
         const base = sortHeaderExists ? 1 : 0;
@@ -7523,6 +7560,7 @@
         saveUndo();
         _swapRowColors(r - 1, r);
         _swapHiddenRows(r - 1, r);
+        state._dupSet = null;
         [state.data[r - 1], state.data[r]] = [state.data[r], state.data[r - 1]];
         state.selected.row = r - 1;
         if (state.anchor) state.anchor.row = r - 1;
@@ -7538,6 +7576,7 @@
         saveUndo();
         _swapRowColors(r, r + 1);
         _swapHiddenRows(r, r + 1);
+        state._dupSet = null;
         [state.data[r], state.data[r + 1]] = [state.data[r + 1], state.data[r]];
         state.selected.row = r + 1;
         if (state.anchor) state.anchor.row = r + 1;
@@ -7571,7 +7610,7 @@
           if (state.verticalHeader) {
             maxW = 30;
           } else {
-            maxW = measureText(state.headers[c] || "", "600 13px system-ui") + 60;
+            maxW = measureText(getDisplayHeader(c) || "", "600 13px system-ui") + 60;
           }
           const sample = Math.min(state.data.length, 300);
           for (let i = 0; i < sample; i++) {
@@ -7906,9 +7945,8 @@
           const sorted = [...state.sejVirtualCols.indices].sort((a, b) => b - a);
           for (const vIdx of sorted) {
             state.headers.splice(vIdx, 1);
-            if (state.displayHeaders) state.displayHeaders.splice(vIdx, 1);
             state.data.forEach(row => row.splice(vIdx, 1));
-            // shiftColIndices で selected/range/cellColors 等を更新（columnFilters/colWidths も含む）
+            // shiftColIndices で selected/range/cellColors/displayHeaders 等を更新
             shiftColIndices(vIdx, -1);
           }
           state.sejVirtualCols = null;
