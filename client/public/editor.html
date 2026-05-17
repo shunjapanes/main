@@ -3379,19 +3379,32 @@
       function toggleHeaderMode() {
         saveUndo();
         if (state.headerMode === "firstRow") {
-          // firstRow → numbered: ヘッダー行をデータの先頭行に戻す
+          // firstRow → numbered: ヘッダー行をデータの先頭行に戻す（row 0に挿入）
+          _shiftRowColors(0, 1);
+          _shiftHiddenRows(0, 1);
           state.data.unshift([...state.headers]);
           state.headers = Array.from({ length: state.headers.length }, (_, i) =>
             String(i + 1),
           );
           state.headerMode = "numbered";
         } else {
-          // numbered → firstRow: データの1行目をヘッダーにする
+          // numbered → firstRow: データの1行目をヘッダーにする（row 0を削除）
           if (state.data.length > 0) {
             state.headers = state.data[0].map((v) => String(v || ""));
             state.data = state.data.slice(1);
             if (!state.data.length)
               state.data = [new Array(state.headers.length).fill("")];
+            // row 0 削除に伴いインデックスをシフト
+            _deleteRangeHiddenRows(0, 0);
+            // cellColors: row 0 を除去し残りを -1 シフト
+            const newCC = {};
+            for (const [k, v] of Object.entries(state.cellColors)) {
+              const sep = k.indexOf(",");
+              const ri = parseInt(k.slice(0, sep));
+              if (ri === 0) continue;
+              newCC[(ri - 1) + k.slice(sep)] = v;
+            }
+            state.cellColors = newCC;
           }
           state.headerMode = "firstRow";
         }
