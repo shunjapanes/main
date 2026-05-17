@@ -6860,7 +6860,7 @@
         const delCols = [];
         for (let c = c1; c <= c2; c++) delCols.push(c);
         if (state.headers.length <= delCols.length) return;
-        const delNames = delCols.map((c) => state.headers[c]);
+        const delNames = delCols.map((c) => getDisplayHeader(c));
         saveUndo();
         for (let i = delCols.length - 1; i >= 0; i--) {
           const c = delCols[i];
@@ -7341,7 +7341,7 @@
         if (state.verticalHeader) {
           maxW = 20;
         } else {
-          maxW = measureText(state.headers[col] || "", "600 13px system-ui") + 60;
+          maxW = measureText(getDisplayHeader(col) || "", "600 13px system-ui") + 60;
         }
         const sample = Math.min(state.data.length, 300);
         for (let i = 0; i < sample; i++) {
@@ -8725,7 +8725,7 @@
         const dlg = $("dup-hl-dialog");
         const sel = $("dup-hl-col");
         sel.innerHTML = state.headers
-          .map((h, i) => `<option value="${i}">${escHtml(h)}</option>`)
+          .map((h, i) => `<option value="${i}">${escHtml(getDisplayHeader(i))}</option>`)
           .join("");
         // 現在の dupCol を復元
         if (state._dupCol != null) sel.value = state._dupCol;
@@ -8966,6 +8966,8 @@
           state.wrapRows   = remapSet(state.wrapRows);
         }
         const removed = before - state.data.length;
+        state._dupSet = null;
+        state._dupCol = null;
         markDirty();
         applyFilters();
         state.forceRender = true;
@@ -9379,6 +9381,16 @@
               state.wrapRows.clear();
               state.conditionalHL = false;
               state.cellColors = {};
+              state.sortCol = -1;
+              state.sortAsc = true;
+              state.sortKeys = [];
+              state.undoStack = [];
+              state.redoStack = [];
+              state.selected = null;
+              state.range = null;
+              state.anchor = null;
+              state._dupSet = null;
+              state._dupCol = null;
               if (state.priceRef) {
                 state.priceRef = null;
                 $('btn-price-ref').classList.remove('active-state');
