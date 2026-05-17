@@ -2942,7 +2942,8 @@
 
         // リロード/離脱時のブラウザデフォルト警告（フォールバック）
         window.onbeforeunload = (e) => {
-          if (state.dirty) {
+          const anyDirty = state.dirty || state.tabs.some(t => t.dirty);
+          if (anyDirty) {
             e.preventDefault();
             return "";
           }
