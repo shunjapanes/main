@@ -3009,6 +3009,16 @@
           state.range = null;
           state.anchor = null;
           _visibleRowsCache = null;
+          // UI 同期（前タブのボタン状態を引き継がない）
+          document.body.classList.remove('wrap-cells');
+          const _bwLF = $('btn-wrap');
+          if (_bwLF) { _bwLF.classList.remove('active-state'); _bwLF.setAttribute('aria-pressed', 'false'); }
+          els.filterToggle.style.background = '';
+          els.filterToggle.style.borderColor = '';
+          els.filterToggle.style.color = '';
+          els.filterToggle.setAttribute('aria-pressed', 'false');
+          els.filterClear.style.display = 'none';
+          els.filterExport.style.display = 'none';
           const tab = {
             fileName: state.fileName,
             headers: state.headers,
