@@ -3475,11 +3475,12 @@
         // 1行目をヘッダーとして固定し、2行目以降のみソート対象とする
         const _sortHeader = state.data.length > 1 ? state.data[0] : null;
         const _sortData = _sortHeader ? state.data.slice(1) : state.data;
-        _sortData.sort((a, b) => {
+        const _base = _sortHeader ? 1 : 0;
+        const _indexed = _sortData.map((row, i) => ({ row, origIdx: _base + i }));
+        _indexed.sort((a, b) => {
           for (const { col: c, asc } of state.sortKeys) {
-            const va = a[c] ?? "",
-              vb = b[c] ?? "";
-            // 空セルは昇順・降順どちらでも常に末尾に並べる
+            const va = a.row[c] ?? "",
+              vb = b.row[c] ?? "";
             if (va === "" && vb === "") continue;
             if (va === "") return 1;
             if (vb === "") return -1;
@@ -3493,7 +3494,9 @@
           }
           return 0;
         });
-        if (_sortHeader) state.data = [_sortHeader, ..._sortData];
+        _sortDataUpdateColors(_indexed, !!_sortHeader);
+        if (_sortHeader) state.data = [_sortHeader, ..._indexed.map(x => x.row)];
+        else state.data = _indexed.map(x => x.row);
         state.selected = null;
         state.range = null;
         state.anchor = null;
@@ -6270,19 +6273,20 @@
                   state.sortKeys = [{ col, asc: true }];
                   const _ch1 = state.data.length > 1 ? state.data[0] : null;
                   const _cd1 = _ch1 ? state.data.slice(1) : state.data;
-                  _cd1.sort((a, b) => {
-                    const va = a[col] ?? "",
-                      vb = b[col] ?? "";
+                  const _base1 = _ch1 ? 1 : 0;
+                  const _idx1 = _cd1.map((row, i) => ({ row, origIdx: _base1 + i }));
+                  _idx1.sort((a, b) => {
+                    const va = a.row[col] ?? "", vb = b.row[col] ?? "";
                     if (va === "" && vb === "") return 0;
                     if (va === "") return 1;
                     if (vb === "") return -1;
-                    const na = Number(va),
-                      nb = Number(vb);
-                    if (!isNaN(na) && !isNaN(nb))
-                      return na - nb;
+                    const na = Number(va), nb = Number(vb);
+                    if (!isNaN(na) && !isNaN(nb)) return na - nb;
                     return String(va).localeCompare(String(vb), "ja");
                   });
-                  if (_ch1) state.data = [_ch1, ..._cd1];
+                  _sortDataUpdateColors(_idx1, !!_ch1);
+                  if (_ch1) state.data = [_ch1, ..._idx1.map(x => x.row)];
+                  else state.data = _idx1.map(x => x.row);
                   state.selected = null;
                   state.range = null;
                   state.anchor = null;
@@ -6304,19 +6308,20 @@
                   state.sortKeys = [{ col, asc: false }];
                   const _ch2 = state.data.length > 1 ? state.data[0] : null;
                   const _cd2 = _ch2 ? state.data.slice(1) : state.data;
-                  _cd2.sort((a, b) => {
-                    const va = a[col] ?? "",
-                      vb = b[col] ?? "";
+                  const _base2 = _ch2 ? 1 : 0;
+                  const _idx2 = _cd2.map((row, i) => ({ row, origIdx: _base2 + i }));
+                  _idx2.sort((a, b) => {
+                    const va = a.row[col] ?? "", vb = b.row[col] ?? "";
                     if (va === "" && vb === "") return 0;
                     if (va === "") return 1;
                     if (vb === "") return -1;
-                    const na = Number(va),
-                      nb = Number(vb);
-                    if (!isNaN(na) && !isNaN(nb))
-                      return nb - na;
+                    const na = Number(va), nb = Number(vb);
+                    if (!isNaN(na) && !isNaN(nb)) return nb - na;
                     return String(vb).localeCompare(String(va), "ja");
                   });
-                  if (_ch2) state.data = [_ch2, ..._cd2];
+                  _sortDataUpdateColors(_idx2, !!_ch2);
+                  if (_ch2) state.data = [_ch2, ..._idx2.map(x => x.row)];
+                  else state.data = _idx2.map(x => x.row);
                   state.selected = null;
                   state.range = null;
                   state.anchor = null;
@@ -6844,6 +6849,21 @@
         }
         state.cellColors = newCellColors;
       }
+      function _sortDataUpdateColors(sortedWithOrigIdx, sortHeaderExists) {
+        if (!Object.keys(state.cellColors).length) return;
+        const base = sortHeaderExists ? 1 : 0;
+        const origToNew = new Map(sortedWithOrigIdx.map((x, ni) => [x.origIdx, base + ni]));
+        const newCC = {};
+        for (const [k, v] of Object.entries(state.cellColors)) {
+          const sep = k.indexOf(",");
+          const ri = parseInt(k.slice(0, sep));
+          const ci = k.slice(sep);
+          if (sortHeaderExists && ri === 0) { newCC[k] = v; continue; }
+          const newRi = origToNew.get(ri);
+          if (newRi !== undefined) newCC[newRi + ci] = v;
+        }
+        state.cellColors = newCC;
+      }
 
       function _shiftRowColors(insertAt, count) {
         // 行挿入: rows >= insertAt を +count シフト
@@ -7285,8 +7305,10 @@
             }
           }),
         );
+        const oldHeaders = [...state.headers];
         state.headers = state.headers.map((h) => String(h).trim());
-        if (count > 0) {
+        const headerChanged = state.headers.some((h, i) => h !== oldHeaders[i]);
+        if (count > 0 || headerChanged) {
           markDirty();
           state.forceRender = true;
           renderHeader();
@@ -8049,17 +8071,18 @@
         }
 
         if (!colMap.length) {
+          document.querySelector("._preview-err-ov")?.remove();
           const _ov = document.createElement("div");
-          _ov.className = "modal-overlay";
+          _ov.className = "modal-overlay _preview-err-ov";
           _ov.innerHTML = `<div class="modal-dialog">
             <div class="modal-title">⚠ マスター列が見つかりません</div>
             <p style="font-size:13px;margin:8px 0 4px">HTML出力に必要な列が見つかりませんでした。<br>「ファイル → マスター読み込み」でマスターファイルを読み込んでください。</p>
-            <div class="modal-btns"><button id="_preview-err-ok" class="btn-primary">閉じる</button></div>
+            <div class="modal-btns"><button class="_preview-err-ok btn-primary">閉じる</button></div>
           </div>`;
           document.body.appendChild(_ov);
-          _ov.querySelector("#_preview-err-ok").onclick = () => _ov.remove();
+          _ov.querySelector("._preview-err-ok").onclick = () => _ov.remove();
           _ov.onkeydown = (e) => { if (e.key === "Escape") _ov.remove(); };
-          _ov.querySelector("#_preview-err-ok").focus();
+          _ov.querySelector("._preview-err-ok").focus();
           return;
         }
 
