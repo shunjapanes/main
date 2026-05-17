@@ -9379,6 +9379,16 @@
               state.wrapRows.clear();
               state.conditionalHL = false;
               state.cellColors = {};
+              state.sortCol = -1;
+              state.sortAsc = true;
+              state.sortKeys = [];
+              state.undoStack = [];
+              state.redoStack = [];
+              state.selected = null;
+              state.range = null;
+              state.anchor = null;
+              state._dupSet = null;
+              state._dupCol = null;
               if (state.priceRef) {
                 state.priceRef = null;
                 $('btn-price-ref').classList.remove('active-state');
