@@ -2431,6 +2431,11 @@
           cap.textContent = `${state.fileName || "TSV/CSV"} データ編集グリッド`;
       }
 
+      function showDropZone() {
+        els.dropZone.classList.remove("hidden");
+        els.container.style.display = "none";
+      }
+
       // ===== タブ管理 =====
       function saveCurrentTab() {
         if (state.activeTab < 0 || !state.tabs.length) return;
@@ -2574,7 +2579,8 @@
         renderHeader();
         state.forceRender = true;
         renderBody();
-        showTable();
+        if (t._isBlankSheet === true && !state.dirty) showDropZone();
+        else showTable();
       }
 
       function closeTab(idx) {
@@ -2605,8 +2611,7 @@
         if (!state.tabs.length) {
           state.activeTab = -1;
           $("tab-bar").style.display = "none";
-          els.dropZone.classList.remove("hidden");
-          els.container.style.display = "none";
+          showDropZone();
           return;
         }
         const newIdx = Math.min(idx, state.tabs.length - 1);
@@ -6784,7 +6789,7 @@
         renderHeader();
         state.forceRender = true;
         renderBody();
-        showTable();
+        showDropZone();
         markClean();
         setStatus(`新しいシート「${state.fileName}」を作成しました`);
       }
