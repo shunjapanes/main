@@ -3541,11 +3541,7 @@
           }
           state.sortKeys = [{ col: state.sortCol, asc: state.sortAsc }];
         }
-        // 1行目をヘッダーとして固定し、2行目以降のみソート対象とする
-        const _sortHeader = state.data.length > 1 ? state.data[0] : null;
-        const _sortData = _sortHeader ? state.data.slice(1) : state.data;
-        const _base = _sortHeader ? 1 : 0;
-        const _indexed = _sortData.map((row, i) => ({ row, origIdx: _base + i }));
+        const _indexed = state.data.map((row, i) => ({ row, origIdx: i }));
         _indexed.sort((a, b) => {
           for (const { col: c, asc } of state.sortKeys) {
             const va = a.row[c] ?? "",
@@ -3563,9 +3559,8 @@
           }
           return 0;
         });
-        _sortDataUpdateColors(_indexed, !!_sortHeader);
-        if (_sortHeader) state.data = [_sortHeader, ..._indexed.map(x => x.row)];
-        else state.data = _indexed.map(x => x.row);
+        _sortDataUpdateColors(_indexed, false);
+        state.data = _indexed.map(x => x.row);
         state.selected = null;
         state.range = null;
         state.anchor = null;
@@ -4764,13 +4759,16 @@
           if (done) return;
           done = true;
           const nv = inp.value;
-          if (nv !== oldVal) {
+          const changed = nv !== oldVal;
+          if (changed) {
             saveUndo();
             safeSet(r, c, nv);
+            state._dupSet = null;
             markDirty();
           }
           td.classList.remove("editing");
           state.isEditing = false;
+          if (changed) applyFilters();
           if (dir === "down") {
             // 最終行でEnter → 新しい行を追加してから移動
             if (r >= state.data.length - 1) {
@@ -5372,6 +5370,7 @@
             }
           } else safeSet(row, col, "");
           markDirty();
+          applyFilters();
           state.forceRender = true;
           renderBody();
           return;
@@ -5532,6 +5531,7 @@
           safeSet(state.selected.row, state.selected.col, "");
         }
         markDirty();
+        applyFilters();
         state.forceRender = true;
         renderBody();
         setStatus("切り取りしました");
@@ -5716,6 +5716,7 @@
           }
         }
         markDirty();
+        applyFilters();
         state.forceRender = true;
         renderBody();
         setStatus("選択範囲全体にペーストしました");
@@ -6014,6 +6015,7 @@
           saveUndo();
           safeSet(row, col, old.replace(re, rep));
           markDirty();
+          applyFilters();
           state.forceRender = true;
           renderBody();
           setStatus("1件置換しました");
@@ -6091,6 +6093,7 @@
           });
         }
         markDirty();
+        applyFilters();
         state.forceRender = true;
         renderBody();
         setStatus(`${cnt}件を置換しました${scopeNote}`);
@@ -6362,10 +6365,7 @@
                   state.sortCol = col;
                   state.sortAsc = true;
                   state.sortKeys = [{ col, asc: true }];
-                  const _ch1 = state.data.length > 1 ? state.data[0] : null;
-                  const _cd1 = _ch1 ? state.data.slice(1) : state.data;
-                  const _base1 = _ch1 ? 1 : 0;
-                  const _idx1 = _cd1.map((row, i) => ({ row, origIdx: _base1 + i }));
+                  const _idx1 = state.data.map((row, i) => ({ row, origIdx: i }));
                   _idx1.sort((a, b) => {
                     const va = a.row[col] ?? "", vb = b.row[col] ?? "";
                     if (va === "" && vb === "") return 0;
@@ -6375,9 +6375,8 @@
                     if (!isNaN(na) && !isNaN(nb)) return na - nb;
                     return String(va).localeCompare(String(vb), "ja");
                   });
-                  _sortDataUpdateColors(_idx1, !!_ch1);
-                  if (_ch1) state.data = [_ch1, ..._idx1.map(x => x.row)];
-                  else state.data = _idx1.map(x => x.row);
+                  _sortDataUpdateColors(_idx1, false);
+                  state.data = _idx1.map(x => x.row);
                   state.selected = null;
                   state.range = null;
                   state.anchor = null;
@@ -6398,10 +6397,7 @@
                   state.sortCol = col;
                   state.sortAsc = false;
                   state.sortKeys = [{ col, asc: false }];
-                  const _ch2 = state.data.length > 1 ? state.data[0] : null;
-                  const _cd2 = _ch2 ? state.data.slice(1) : state.data;
-                  const _base2 = _ch2 ? 1 : 0;
-                  const _idx2 = _cd2.map((row, i) => ({ row, origIdx: _base2 + i }));
+                  const _idx2 = state.data.map((row, i) => ({ row, origIdx: i }));
                   _idx2.sort((a, b) => {
                     const va = a.row[col] ?? "", vb = b.row[col] ?? "";
                     if (va === "" && vb === "") return 0;
@@ -6411,9 +6407,8 @@
                     if (!isNaN(na) && !isNaN(nb)) return nb - na;
                     return String(vb).localeCompare(String(va), "ja");
                   });
-                  _sortDataUpdateColors(_idx2, !!_ch2);
-                  if (_ch2) state.data = [_ch2, ..._idx2.map(x => x.row)];
-                  else state.data = _idx2.map(x => x.row);
+                  _sortDataUpdateColors(_idx2, false);
+                  state.data = _idx2.map(x => x.row);
                   state.selected = null;
                   state.range = null;
                   state.anchor = null;
@@ -6869,6 +6864,7 @@
         state.range = null;
         state.anchor = { ...state.selected };
         markDirty();
+        applyFilters();
         renderHeader();
         state.forceRender = true;
         renderBody();
@@ -7548,6 +7544,7 @@
         const headerChanged = state.headers.some((h, i) => h !== oldHeaders[i]);
         if (count > 0 || headerChanged) {
           markDirty();
+          applyFilters();
           state.forceRender = true;
           renderHeader();
           renderBody();
@@ -7567,6 +7564,7 @@
         state.selected.row = r - 1;
         if (state.anchor) state.anchor.row = r - 1;
         markDirty();
+        applyFilters();
         state.forceRender = true;
         renderBody();
         scrollToCell(r - 1);
@@ -7583,6 +7581,7 @@
         state.selected.row = r + 1;
         if (state.anchor) state.anchor.row = r + 1;
         markDirty();
+        applyFilters();
         state.forceRender = true;
         renderBody();
         scrollToCell(r + 1);
@@ -9326,7 +9325,7 @@
             ? '"' + s.replace(/"/g, '""') + '"'
             : s;
         };
-        var rows = (state.filteredIndices && state.filteredIndices.length)
+        var rows = state.filteredIndices
           ? state.filteredIndices
           : state.data.map(function(_, i) { return i; });
         var dataLines = rows.map(function(i) { return (state.data[i] || []).map(esc).join(d); }).join('\n');
