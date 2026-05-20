@@ -3541,7 +3541,12 @@
           }
           state.sortKeys = [{ col: state.sortCol, asc: state.sortAsc }];
         }
-        const _indexed = state.data.map((row, i) => ({ row, origIdx: i }));
+        // numberedモードのみ先頭行（元ヘッダー行）を固定してそれ以降をソート
+        const _sortHeaderExists = state.headerMode === "numbered" && state.data.length > 1;
+        const _sortHeader = _sortHeaderExists ? state.data[0] : null;
+        const _sortData = _sortHeaderExists ? state.data.slice(1) : state.data;
+        const _base = _sortHeaderExists ? 1 : 0;
+        const _indexed = _sortData.map((row, i) => ({ row, origIdx: _base + i }));
         _indexed.sort((a, b) => {
           for (const { col: c, asc } of state.sortKeys) {
             const va = a.row[c] ?? "",
@@ -3559,8 +3564,9 @@
           }
           return 0;
         });
-        _sortDataUpdateColors(_indexed, false);
-        state.data = _indexed.map(x => x.row);
+        _sortDataUpdateColors(_indexed, _sortHeaderExists);
+        if (_sortHeaderExists) state.data = [_sortHeader, ..._indexed.map(x => x.row)];
+        else state.data = _indexed.map(x => x.row);
         state.selected = null;
         state.range = null;
         state.anchor = null;
@@ -6365,7 +6371,11 @@
                   state.sortCol = col;
                   state.sortAsc = true;
                   state.sortKeys = [{ col, asc: true }];
-                  const _idx1 = state.data.map((row, i) => ({ row, origIdx: i }));
+                  const _ch1Exists = state.headerMode === "numbered" && state.data.length > 1;
+                  const _ch1 = _ch1Exists ? state.data[0] : null;
+                  const _cd1 = _ch1Exists ? state.data.slice(1) : state.data;
+                  const _base1 = _ch1Exists ? 1 : 0;
+                  const _idx1 = _cd1.map((row, i) => ({ row, origIdx: _base1 + i }));
                   _idx1.sort((a, b) => {
                     const va = a.row[col] ?? "", vb = b.row[col] ?? "";
                     if (va === "" && vb === "") return 0;
@@ -6375,8 +6385,9 @@
                     if (!isNaN(na) && !isNaN(nb)) return na - nb;
                     return String(va).localeCompare(String(vb), "ja");
                   });
-                  _sortDataUpdateColors(_idx1, false);
-                  state.data = _idx1.map(x => x.row);
+                  _sortDataUpdateColors(_idx1, _ch1Exists);
+                  if (_ch1Exists) state.data = [_ch1, ..._idx1.map(x => x.row)];
+                  else state.data = _idx1.map(x => x.row);
                   state.selected = null;
                   state.range = null;
                   state.anchor = null;
@@ -6397,7 +6408,11 @@
                   state.sortCol = col;
                   state.sortAsc = false;
                   state.sortKeys = [{ col, asc: false }];
-                  const _idx2 = state.data.map((row, i) => ({ row, origIdx: i }));
+                  const _ch2Exists = state.headerMode === "numbered" && state.data.length > 1;
+                  const _ch2 = _ch2Exists ? state.data[0] : null;
+                  const _cd2 = _ch2Exists ? state.data.slice(1) : state.data;
+                  const _base2 = _ch2Exists ? 1 : 0;
+                  const _idx2 = _cd2.map((row, i) => ({ row, origIdx: _base2 + i }));
                   _idx2.sort((a, b) => {
                     const va = a.row[col] ?? "", vb = b.row[col] ?? "";
                     if (va === "" && vb === "") return 0;
@@ -6407,8 +6422,9 @@
                     if (!isNaN(na) && !isNaN(nb)) return nb - na;
                     return String(vb).localeCompare(String(va), "ja");
                   });
-                  _sortDataUpdateColors(_idx2, false);
-                  state.data = _idx2.map(x => x.row);
+                  _sortDataUpdateColors(_idx2, _ch2Exists);
+                  if (_ch2Exists) state.data = [_ch2, ..._idx2.map(x => x.row)];
+                  else state.data = _idx2.map(x => x.row);
                   state.selected = null;
                   state.range = null;
                   state.anchor = null;
