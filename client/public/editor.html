@@ -2431,6 +2431,11 @@
           cap.textContent = `${state.fileName || "TSV/CSV"} データ編集グリッド`;
       }
 
+      function showDropZone() {
+        els.dropZone.classList.remove("hidden");
+        els.container.style.display = "none";
+      }
+
       // ===== タブ管理 =====
       function saveCurrentTab() {
         if (state.activeTab < 0 || !state.tabs.length) return;
@@ -2574,7 +2579,8 @@
         renderHeader();
         state.forceRender = true;
         renderBody();
-        showTable();
+        if (t._isBlankSheet === true && !state.dirty) showDropZone();
+        else showTable();
       }
 
       function closeTab(idx) {
@@ -2605,8 +2611,7 @@
         if (!state.tabs.length) {
           state.activeTab = -1;
           $("tab-bar").style.display = "none";
-          els.dropZone.classList.remove("hidden");
-          els.container.style.display = "none";
+          showDropZone();
           return;
         }
         const newIdx = Math.min(idx, state.tabs.length - 1);
@@ -4760,13 +4765,16 @@
           if (done) return;
           done = true;
           const nv = inp.value;
-          if (nv !== oldVal) {
+          const changed = nv !== oldVal;
+          if (changed) {
             saveUndo();
             safeSet(r, c, nv);
+            state._dupSet = null;
             markDirty();
           }
           td.classList.remove("editing");
           state.isEditing = false;
+          if (changed) applyFilters();
           if (dir === "down") {
             // 最終行でEnter → 新しい行を追加してから移動
             if (r >= state.data.length - 1) {
@@ -5368,6 +5376,7 @@
             }
           } else safeSet(row, col, "");
           markDirty();
+          applyFilters();
           state.forceRender = true;
           renderBody();
           return;
@@ -5528,6 +5537,7 @@
           safeSet(state.selected.row, state.selected.col, "");
         }
         markDirty();
+        applyFilters();
         state.forceRender = true;
         renderBody();
         setStatus("切り取りしました");
@@ -5712,6 +5722,7 @@
           }
         }
         markDirty();
+        applyFilters();
         state.forceRender = true;
         renderBody();
         setStatus("選択範囲全体にペーストしました");
@@ -6010,6 +6021,7 @@
           saveUndo();
           safeSet(row, col, old.replace(re, rep));
           markDirty();
+          applyFilters();
           state.forceRender = true;
           renderBody();
           setStatus("1件置換しました");
@@ -6087,6 +6099,7 @@
           });
         }
         markDirty();
+        applyFilters();
         state.forceRender = true;
         renderBody();
         setStatus(`${cnt}件を置換しました${scopeNote}`);
@@ -6358,9 +6371,10 @@
                   state.sortCol = col;
                   state.sortAsc = true;
                   state.sortKeys = [{ col, asc: true }];
-                  const _ch1 = state.data.length > 1 ? state.data[0] : null;
-                  const _cd1 = _ch1 ? state.data.slice(1) : state.data;
-                  const _base1 = _ch1 ? 1 : 0;
+                  const _ch1Exists = state.headerMode === "numbered" && state.data.length > 1;
+                  const _ch1 = _ch1Exists ? state.data[0] : null;
+                  const _cd1 = _ch1Exists ? state.data.slice(1) : state.data;
+                  const _base1 = _ch1Exists ? 1 : 0;
                   const _idx1 = _cd1.map((row, i) => ({ row, origIdx: _base1 + i }));
                   _idx1.sort((a, b) => {
                     const va = a.row[col] ?? "", vb = b.row[col] ?? "";
@@ -6371,8 +6385,8 @@
                     if (!isNaN(na) && !isNaN(nb)) return na - nb;
                     return String(va).localeCompare(String(vb), "ja");
                   });
-                  _sortDataUpdateColors(_idx1, !!_ch1);
-                  if (_ch1) state.data = [_ch1, ..._idx1.map(x => x.row)];
+                  _sortDataUpdateColors(_idx1, _ch1Exists);
+                  if (_ch1Exists) state.data = [_ch1, ..._idx1.map(x => x.row)];
                   else state.data = _idx1.map(x => x.row);
                   state.selected = null;
                   state.range = null;
@@ -6394,9 +6408,10 @@
                   state.sortCol = col;
                   state.sortAsc = false;
                   state.sortKeys = [{ col, asc: false }];
-                  const _ch2 = state.data.length > 1 ? state.data[0] : null;
-                  const _cd2 = _ch2 ? state.data.slice(1) : state.data;
-                  const _base2 = _ch2 ? 1 : 0;
+                  const _ch2Exists = state.headerMode === "numbered" && state.data.length > 1;
+                  const _ch2 = _ch2Exists ? state.data[0] : null;
+                  const _cd2 = _ch2Exists ? state.data.slice(1) : state.data;
+                  const _base2 = _ch2Exists ? 1 : 0;
                   const _idx2 = _cd2.map((row, i) => ({ row, origIdx: _base2 + i }));
                   _idx2.sort((a, b) => {
                     const va = a.row[col] ?? "", vb = b.row[col] ?? "";
@@ -6407,8 +6422,8 @@
                     if (!isNaN(na) && !isNaN(nb)) return nb - na;
                     return String(vb).localeCompare(String(va), "ja");
                   });
-                  _sortDataUpdateColors(_idx2, !!_ch2);
-                  if (_ch2) state.data = [_ch2, ..._idx2.map(x => x.row)];
+                  _sortDataUpdateColors(_idx2, _ch2Exists);
+                  if (_ch2Exists) state.data = [_ch2, ..._idx2.map(x => x.row)];
                   else state.data = _idx2.map(x => x.row);
                   state.selected = null;
                   state.range = null;
@@ -6785,7 +6800,7 @@
         renderHeader();
         state.forceRender = true;
         renderBody();
-        showTable();
+        showDropZone();
         markClean();
         setStatus(`新しいシート「${state.fileName}」を作成しました`);
       }
@@ -6865,6 +6880,7 @@
         state.range = null;
         state.anchor = { ...state.selected };
         markDirty();
+        applyFilters();
         renderHeader();
         state.forceRender = true;
         renderBody();
@@ -7544,6 +7560,7 @@
         const headerChanged = state.headers.some((h, i) => h !== oldHeaders[i]);
         if (count > 0 || headerChanged) {
           markDirty();
+          applyFilters();
           state.forceRender = true;
           renderHeader();
           renderBody();
@@ -7563,6 +7580,7 @@
         state.selected.row = r - 1;
         if (state.anchor) state.anchor.row = r - 1;
         markDirty();
+        applyFilters();
         state.forceRender = true;
         renderBody();
         scrollToCell(r - 1);
@@ -7579,6 +7597,7 @@
         state.selected.row = r + 1;
         if (state.anchor) state.anchor.row = r + 1;
         markDirty();
+        applyFilters();
         state.forceRender = true;
         renderBody();
         scrollToCell(r + 1);
@@ -9322,7 +9341,7 @@
             ? '"' + s.replace(/"/g, '""') + '"'
             : s;
         };
-        var rows = (state.filteredIndices && state.filteredIndices.length)
+        var rows = state.filteredIndices
           ? state.filteredIndices
           : state.data.map(function(_, i) { return i; });
         var dataLines = rows.map(function(i) { return (state.data[i] || []).map(esc).join(d); }).join('\n');
