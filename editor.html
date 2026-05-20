@@ -3536,10 +3536,11 @@
           }
           state.sortKeys = [{ col: state.sortCol, asc: state.sortAsc }];
         }
-        // 1行目をヘッダーとして固定し、2行目以降のみソート対象とする
-        const _sortHeader = state.data.length > 1 ? state.data[0] : null;
-        const _sortData = _sortHeader ? state.data.slice(1) : state.data;
-        const _base = _sortHeader ? 1 : 0;
+        // numberedモードのみ先頭行（元ヘッダー行）を固定してそれ以降をソート
+        const _sortHeaderExists = state.headerMode === "numbered" && state.data.length > 1;
+        const _sortHeader = _sortHeaderExists ? state.data[0] : null;
+        const _sortData = _sortHeaderExists ? state.data.slice(1) : state.data;
+        const _base = _sortHeaderExists ? 1 : 0;
         const _indexed = _sortData.map((row, i) => ({ row, origIdx: _base + i }));
         _indexed.sort((a, b) => {
           for (const { col: c, asc } of state.sortKeys) {
@@ -3558,8 +3559,8 @@
           }
           return 0;
         });
-        _sortDataUpdateColors(_indexed, !!_sortHeader);
-        if (_sortHeader) state.data = [_sortHeader, ..._indexed.map(x => x.row)];
+        _sortDataUpdateColors(_indexed, _sortHeaderExists);
+        if (_sortHeaderExists) state.data = [_sortHeader, ..._indexed.map(x => x.row)];
         else state.data = _indexed.map(x => x.row);
         state.selected = null;
         state.range = null;
