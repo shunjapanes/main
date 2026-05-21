@@ -1,4 +1,5 @@
 import { type LucideIcon } from 'lucide-react'
+import { focusEditor } from '../lib/bridge'
 
 interface Props {
   icon: LucideIcon
@@ -13,8 +14,8 @@ interface Props {
 export default function RibbonButton({ icon: Icon, label, onClick, disabled, active, size = 'normal', title }: Props) {
   const base = 'flex flex-col items-center justify-center gap-0.5 rounded cursor-pointer select-none transition-colors'
   const sizeClass = size === 'large'
-    ? 'w-14 h-14 px-1'
-    : 'w-12 h-12 px-1'
+    ? 'min-w-[60px] max-w-[76px] h-full px-1'
+    : 'min-w-[48px] max-w-[68px] h-full px-1'
   const stateClass = disabled
     ? 'opacity-40 cursor-not-allowed'
     : active
@@ -24,13 +25,13 @@ export default function RibbonButton({ icon: Icon, label, onClick, disabled, act
   return (
     <button
       className={`${base} ${sizeClass} ${stateClass}`}
-      onClick={disabled ? undefined : onClick}
+      onClick={disabled ? undefined : () => { onClick(); focusEditor() }}
       title={title ?? label}
       aria-label={label}
       disabled={disabled}
     >
-      <Icon size={size === 'large' ? 22 : 18} strokeWidth={1.5} />
-      <span className="text-[9px] leading-tight text-center whitespace-nowrap overflow-hidden w-full" style={{ maxWidth: '100%' }}>
+      <Icon size={size === 'large' ? 22 : 18} strokeWidth={1.5} className="flex-shrink-0" />
+      <span className="text-[9px] leading-tight text-center break-all line-clamp-2 w-full">
         {label}
       </span>
     </button>

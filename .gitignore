@@ -1,2 +1,5 @@
 client/node_modules
 client/dist
+client/test-results
+client/playwright-report
+test-results/

@@ -1,15 +1,40 @@
-import { useState } from 'react'
+import { type Ref, useEffect, useRef, useState } from 'react'
 import { Search, Replace, Hash, ChevronDown, ChevronUp, X } from 'lucide-react'
-import { send } from '../lib/bridge'
+import { send, focusEditor } from '../lib/bridge'
 
-export default function SearchBar() {
-  const [query, setQuery] = useState('')
+interface Props {
+  inputRef?: Ref<HTMLInputElement>
+  searchCount?: string
+  searchQuery?: string
+  onSearchQueryChange?: (q: string) => void
+}
+
+export default function SearchBar({ inputRef, searchCount, searchQuery: externalQuery, onSearchQueryChange }: Props) {
+  const [query, setQuery] = useState(externalQuery ?? '')
   const [replaceText, setReplaceText] = useState('')
   const [showReplace, setShowReplace] = useState(false)
   const [rowNum, setRowNum] = useState('')
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const doSearch = () => {
-    send('search', query)
+  // Sync when parent clears the query externally
+  useEffect(() => {
+    if (externalQuery !== undefined && externalQuery !== query) {
+      setQuery(externalQuery)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalQuery])
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      send('search', query)
+    }, 180)
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [query])
+
+  const handleQueryChange = (val: string) => {
+    setQuery(val)
+    onSearchQueryChange?.(val)
   }
 
   const doGotoRow = () => {
@@ -17,22 +42,31 @@ export default function SearchBar() {
   }
 
   return (
-    <div className="flex flex-row items-center gap-1 px-2 py-1 bg-white border-b border-gray-200 text-xs" style={{ flexShrink: 0 }}>
+    <div className="flex flex-row items-center gap-1 px-2 py-1 bg-white border-b border-gray-200 text-xs overflow-x-auto overflow-y-hidden" style={{ flexShrink: 0 }}>
       {/* Search */}
       <div className="flex flex-row items-center bg-gray-100 border border-gray-300 rounded overflow-hidden">
         <Search size={13} className="ml-1.5 text-gray-500 flex-shrink-0" />
         <input
+          ref={inputRef}
           className="bg-transparent outline-none px-1.5 py-0.5 w-44 text-xs"
           placeholder="検索..."
           value={query}
-          onChange={e => setQuery(e.target.value)}
+          onChange={e => handleQueryChange(e.target.value)}
           onKeyDown={e => {
-            if (e.key === 'Enter') { e.shiftKey ? send('searchPrev') : send('searchNext') }
-            if (e.key === 'Escape') { setQuery(''); send('clearSearch') }
+            const cmd = e.ctrlKey || e.metaKey
+            if (e.key === 'Enter') {
+              // デバウンス前でも即検索してからナビゲート
+              if (debounceRef.current) clearTimeout(debounceRef.current)
+              send('search', query)
+              setTimeout(() => send(e.shiftKey ? 'searchPrev' : 'searchNext'), 30)
+            }
+            if (e.key === 'Escape') { handleQueryChange(''); send('clearSearch'); focusEditor() }
+            if (cmd && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); (e.target as HTMLInputElement).select() }
           }}
         />
+        {searchCount && <span className="mx-1 text-gray-500 text-[10px] whitespace-nowrap">{searchCount}</span>}
         {query && (
-          <button className="mr-1 text-gray-400 hover:text-gray-600" onClick={() => { setQuery(''); send('clearSearch') }}>
+          <button className="mr-1 text-gray-400 hover:text-gray-600" onClick={() => { handleQueryChange(''); send('clearSearch'); focusEditor() }}>
             <X size={12} />
           </button>
         )}
@@ -41,7 +75,7 @@ export default function SearchBar() {
       <button className="p-1 rounded hover:bg-gray-100 text-gray-600" onClick={() => send('searchPrev')} title="前を検索 (Shift+Enter)">
         <ChevronUp size={14} />
       </button>
-      <button className="p-1 rounded hover:bg-gray-100 text-gray-600" onClick={() => doSearch()} title="次を検索 (Enter)">
+      <button className="p-1 rounded hover:bg-gray-100 text-gray-600" onClick={() => send('searchNext')} title="次を検索 (Enter)">
         <ChevronDown size={14} />
       </button>
 
@@ -66,8 +100,12 @@ export default function SearchBar() {
               onChange={e => setReplaceText(e.target.value)}
             />
           </div>
-          <button className="px-2 py-0.5 rounded bg-gray-200 hover:bg-gray-300 text-xs" onClick={() => send('replaceOne', replaceText)}>1件</button>
-          <button className="px-2 py-0.5 rounded bg-gray-200 hover:bg-gray-300 text-xs" onClick={() => send('replaceAll', replaceText)}>全て</button>
+          <button className="px-2 py-0.5 rounded bg-gray-200 hover:bg-gray-300 text-xs" onClick={() => {
+            send('search', query); send('replaceOne', replaceText)
+          }}>1件</button>
+          <button className="px-2 py-0.5 rounded bg-gray-200 hover:bg-gray-300 text-xs" onClick={() => {
+            send('search', query); send('replaceAll', replaceText)
+          }}>全て</button>
         </>
       )}
 

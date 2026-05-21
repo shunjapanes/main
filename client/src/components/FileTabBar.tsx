@@ -1,5 +1,5 @@
 import { Plus, X } from 'lucide-react'
-import { send } from '../lib/bridge'
+import { send, focusEditor } from '../lib/bridge'
 
 interface Tab {
   name: string
@@ -22,12 +22,12 @@ export default function FileTabBar({ tabs, activeTab }: Props) {
               ? 'bg-white text-gray-800 font-medium'
               : 'text-green-100 hover:bg-green-700'
           }`}
-          onClick={() => send('switchTab', i)}
+          onClick={() => { send('switchTab', i); focusEditor() }}
         >
           <span>{tab.dirty ? '● ' : ''}{tab.name}</span>
           <button
             className="opacity-0 group-hover:opacity-60 hover:!opacity-100 ml-1 rounded"
-            onClick={e => { e.stopPropagation(); send('closeTab', i) }}
+            onClick={e => { e.stopPropagation(); send('closeTab', i); focusEditor() }}
             title="タブを閉じる"
           >
             <X size={10} />
@@ -36,7 +36,7 @@ export default function FileTabBar({ tabs, activeTab }: Props) {
       ))}
       <button
         className="flex items-center px-2 text-green-200 hover:bg-green-700 h-full"
-        onClick={() => send('addSheet')}
+        onClick={() => { send('addSheet'); focusEditor() }}
         title="シートを追加"
       >
         <Plus size={14} />
