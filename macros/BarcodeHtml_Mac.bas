@@ -1,21 +1,15 @@
 Attribute VB_Name = "BarcodeHtml"
 '==============================================================
 ' BarcodeHtml (macOS 専用版)
-' Excel 表（A=JAN, B=商品名, C=数量, D=金額）から EAN-13 バーコード一覧 HTML を出力
+' Excel 表（A=JAN, B=商品名, C=数量, D=金額）から EAN-13 バーコード一覧 PDF を出力
 '
-' 動作環境：macOS 版 Excel (Microsoft 365) 16.x 以降
-'
-' 行継続文字 (_) を一切使わない構成にしてあります。
-' Excel for Mac の VBA エディタが行継続でコンパイルエラーを出す環境向け。
+' 動作環境：
+'   - macOS 版 Excel (Microsoft 365) 16.x 以降
 '==============================================================
 Option Explicit
 
-Private Const MODULE_WIDTH As Double = 3
-Private Const BAR_HEIGHT As Double = 80
-Private Const QUIET_ZONE As Double = 10
-
 Private Function GetLPatterns() As String
-    GetLPatterns = "0001101,0011001,0010013,0111101,0100011,0110001,0101111,0111011,0110111,0001011"
+    GetLPatterns = "0001101,0011001,0010011,0111101,0100011,0110001,0101111,0111011,0110111,0001011"
 End Function
 
 Private Function GetGPatterns() As String
@@ -30,21 +24,19 @@ Private Function GetParityTable() As String
     GetParityTable = "LLLLLL,LLGLGG,LLGGLG,LLGGGL,LGLLGG,LGGLLG,LGGGLL,LGLGLG,LGLGGL,LGGLGL"
 End Function
 
-Public Sub ExportBarcodeHtml()
+Public Sub ExportBarcodePdf()
     Dim ws As Worksheet
+    Dim outWs As Worksheet
     Dim lastRow As Long
     Dim i As Long
     Dim jan As String
     Dim productName As String
     Dim quantity As Variant
     Dim price As Variant
-    Dim html As String
-    Dim items As String
-    Dim skippedRows As String
-    Dim totalCount As Long
-    Dim okCount As Long
     Dim savePath As String
-    Dim msg As String
+    Dim rowOut As Long
+    Dim okCount As Long
+    Dim skippedRows As String
 
     Set ws = ActiveSheet
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
@@ -55,6 +47,18 @@ Public Sub ExportBarcodeHtml()
     End If
 
     Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    On Error Resume Next
+    ThisWorkbook.Sheets("_BarcodeOut").Delete
+    On Error GoTo 0
+    Application.DisplayAlerts = True
+
+    Set outWs = ThisWorkbook.Sheets.Add(After:=ws)
+    outWs.Name = "_BarcodeOut"
+
+    SetupOutputSheet outWs
+
+    rowOut = 2
 
     For i = 2 To lastRow
         jan = NormalizeJan(ws.Cells(i, 1).Value)
@@ -66,216 +70,202 @@ Public Sub ExportBarcodeHtml()
             ' 空行スキップ
         ElseIf Len(jan) <> 13 Then
             skippedRows = skippedRows & vbCrLf & "  " & i & " 行目: 「" & jan & "」(" & Len(jan) & "桁) → 13桁ではありません"
-            totalCount = totalCount + 1
         ElseIf Not IsNumeric(jan) Then
-            skippedRows = skippedRows & vbCrLf & "  " & i & " 行目: 「" & jan & "」 → 数字以外が含まれています"
-            totalCount = totalCount + 1
+            skippedRows = skippedRows & vbCrLf & "  " & i & " 行目: 「" & jan & "」→ 数字以外が含まれています"
         Else
-            items = items & BuildItemHtml(jan, productName, quantity, price)
+            DrawBarcodeRow outWs, rowOut, jan, productName, quantity, price
+            rowOut = rowOut + 1
             okCount = okCount + 1
-            totalCount = totalCount + 1
         End If
     Next i
 
-    Application.ScreenUpdating = True
-
     If okCount = 0 Then
+        Application.DisplayAlerts = False
+        outWs.Delete
+        Application.DisplayAlerts = True
+        Application.ScreenUpdating = True
         MsgBox "出力対象が0件でした。" & skippedRows, vbExclamation, "出力できません"
         Exit Sub
     End If
 
-    html = BuildPageHtml(items, okCount)
+    savePath = Environ("HOME") & "/Documents/barcode_" & Format(Now, "yyyymmdd_hhmmss") & ".pdf"
 
-    savePath = MakeTempPath()
-
-    On Error GoTo WriteError
-    WriteTextFile savePath, html
+    On Error GoTo PdfError
+    outWs.ExportAsFixedFormat Type:=xlTypePDF, Filename:=savePath, _
+        Quality:=xlQualityStandard, IncludeDocProperties:=False, _
+        IgnorePrintAreas:=False, OpenAfterPublish:=True
     On Error GoTo 0
 
-    OpenInBrowser savePath
+    Application.DisplayAlerts = False
+    outWs.Delete
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
 
-    msg = okCount & " 件のバーコードを出力しました。" & vbCrLf & vbCrLf
-    msg = msg & "ファイル: " & savePath & vbCrLf & vbCrLf
-    msg = msg & "ブラウザが自動で開かない場合は Finder から上記ファイルを開いてください。"
     If LenB(skippedRows) > 0 Then
-        msg = msg & vbCrLf & vbCrLf & "スキップした行（" & (totalCount - okCount) & " 件）:" & skippedRows
+        MsgBox okCount & " 件を PDF で出力しました。" & vbCrLf & vbCrLf & _
+            "スキップした行:" & skippedRows, vbInformation, "完了（一部スキップ）"
     End If
-    MsgBox msg, vbInformation, "出力完了"
     Exit Sub
 
-WriteError:
-    MsgBox "ファイル書き込みに失敗しました。" & vbCrLf & "パス: " & savePath & vbCrLf & "エラー: " & Err.Description, vbCritical, "エラー"
+PdfError:
+    Application.DisplayAlerts = False
+    On Error Resume Next
+    outWs.Delete
+    On Error GoTo 0
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+    MsgBox "PDF 出力に失敗しました。" & vbCrLf & "エラー: " & Err.Description, vbCritical, "エラー"
 End Sub
 
-Private Function BuildItemHtml(jan As String, productName As String, quantity As Variant, price As Variant) As String
-    Dim svg As String
-    Dim qtyText As String
-    Dim priceText As String
-    Dim sb As String
+Private Sub SetupOutputSheet(ws As Worksheet)
+    With ws.PageSetup
+        .Orientation = xlPortrait
+        .PaperSize = xlPaperA4
+        .LeftMargin = Application.InchesToPoints(0.4)
+        .RightMargin = Application.InchesToPoints(0.4)
+        .TopMargin = Application.InchesToPoints(0.4)
+        .BottomMargin = Application.InchesToPoints(0.4)
+        .HeaderMargin = 0
+        .FooterMargin = 0
+        .FitToPagesWide = 1
+        .FitToPagesTall = False
+        .Zoom = False
+    End With
 
-    svg = BuildEan13Svg(jan)
+    ws.Columns(1).ColumnWidth = 22
+    ws.Columns(2).ColumnWidth = 26
+    ws.Columns(3).ColumnWidth = 14
+    ws.Columns(4).ColumnWidth = 7
+    ws.Columns(5).ColumnWidth = 10
 
-    If IsNumeric(quantity) Then
-        qtyText = CStr(CLng(quantity))
-    Else
-        qtyText = HtmlEscape(CStr(quantity))
-    End If
+    ws.Rows(1).RowHeight = 20
 
-    priceText = FormatPrice(price)
+    ws.Cells(1, 1).Value = "商品名"
+    ws.Cells(1, 2).Value = "バーコード"
+    ws.Cells(1, 3).Value = "JAN"
+    ws.Cells(1, 4).Value = "数量"
+    ws.Cells(1, 5).Value = "金額"
 
-    sb = "    <tr>" & vbLf
-    sb = sb & "      <td class=""name"">" & HtmlEscape(productName) & "</td>" & vbLf
-    sb = sb & "      <td class=""barcode"">" & svg & "</td>" & vbLf
-    sb = sb & "      <td class=""jan"">" & jan & "</td>" & vbLf
-    sb = sb & "      <td class=""qty"">" & qtyText & "</td>" & vbLf
-    sb = sb & "      <td class=""price"">" & priceText & "</td>" & vbLf
-    sb = sb & "    </tr>" & vbLf
+    With ws.Range("A1:E1")
+        .Interior.Color = RGB(51, 51, 51)
+        .Font.Color = RGB(255, 255, 255)
+        .Font.Bold = True
+        .Font.Size = 10
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+    End With
+End Sub
 
-    BuildItemHtml = sb
-End Function
+Private Sub DrawBarcodeRow(ws As Worksheet, rowNum As Long, jan As String, productName As String, quantity As Variant, price As Variant)
+    Const MOD_PT As Double = 1.5
+    Const BAR_H As Double = 52
+    Const QZ As Long = 8
+    Const ROW_H As Double = 72
 
-Private Function FormatPrice(p As Variant) As String
-    If IsNull(p) Or IsEmpty(p) Then
-        FormatPrice = "—"
-        Exit Function
-    End If
-
-    If IsNumeric(p) Then
-        FormatPrice = "¥" & Format(CDbl(p), "#,##0")
-    Else
-        FormatPrice = HtmlEscape(CStr(p))
-    End If
-End Function
-
-Private Function BuildPageHtml(items As String, okCount As Long) As String
-    Dim sb As String
-
-    sb = "<!DOCTYPE html>" & vbLf
-    sb = sb & "<html lang=""ja"">" & vbLf
-    sb = sb & "<head>" & vbLf
-    sb = sb & "  <meta charset=""UTF-8"">" & vbLf
-    sb = sb & "  <title>バーコード一覧 (" & okCount & " 件)</title>" & vbLf
-    sb = sb & "  <style>" & vbLf
-    sb = sb & "    * { box-sizing: border-box; }" & vbLf
-    sb = sb & "    body { font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif; margin: 16px; background: #f5f5f5; color: #222; }" & vbLf
-    sb = sb & "    header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }" & vbLf
-    sb = sb & "    header h1 { font-size: 18px; margin: 0; }" & vbLf
-    sb = sb & "    header .info { font-size: 12px; color: #555; }" & vbLf
-    sb = sb & "    .wrap { overflow-x: auto; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.12); }" & vbLf
-    sb = sb & "    table { border-collapse: collapse; width: max-content; min-width: 100%; background: #fff; }" & vbLf
-    sb = sb & "    thead th { background: #333; color: #fff; padding: 10px 14px; text-align: center; font-size: 13px; white-space: nowrap; }" & vbLf
-    sb = sb & "    tbody tr { border-bottom: 1px solid #e0e0e0; page-break-inside: avoid; }" & vbLf
-    sb = sb & "    tbody tr:nth-child(even) { background: #fafafa; }" & vbLf
-    sb = sb & "    tbody tr:hover { background: #e8f4ff; }" & vbLf
-    sb = sb & "    td { padding: 10px 14px; vertical-align: middle; }" & vbLf
-    sb = sb & "    td.name { font-size: 14px; font-weight: bold; line-height: 1.4; min-width: 200px; }" & vbLf
-    sb = sb & "    td.barcode { text-align: center; padding: 6px 14px; min-width: 380px; }" & vbLf
-    sb = sb & "    td.barcode svg { display: block; margin: 0 auto; }" & vbLf
-    sb = sb & "    td.jan { font-family: 'Menlo', 'Courier New', monospace; font-size: 14px; font-weight: bold; white-space: nowrap; text-align: center; letter-spacing: 1px; }" & vbLf
-    sb = sb & "    td.qty { text-align: right; font-size: 18px; font-weight: bold; color: #0066cc; white-space: nowrap; min-width: 60px; }" & vbLf
-    sb = sb & "    td.price { text-align: right; font-size: 18px; font-weight: bold; color: #cc6600; white-space: nowrap; min-width: 80px; }" & vbLf
-    sb = sb & "    @media print {" & vbLf
-    sb = sb & "      body { background: #fff; margin: 8mm; }" & vbLf
-    sb = sb & "      thead th { background: #333 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }" & vbLf
-    sb = sb & "      tbody tr { border-bottom: 1px solid #999; }" & vbLf
-    sb = sb & "    }" & vbLf
-    sb = sb & "  </style>" & vbLf
-    sb = sb & "</head>" & vbLf
-    sb = sb & "<body>" & vbLf
-    sb = sb & "  <header>" & vbLf
-    sb = sb & "    <h1>バーコード一覧</h1>" & vbLf
-    sb = sb & "    <div class=""info"">出力件数: " & okCount & " 件 / 出力日時: " & Format(Now, "yyyy/mm/dd hh:mm") & "</div>" & vbLf
-    sb = sb & "  </header>" & vbLf
-    sb = sb & "  <div class=""wrap"">" & vbLf
-    sb = sb & "  <table>" & vbLf
-    sb = sb & "    <thead><tr>" & vbLf
-    sb = sb & "      <th>商品名</th><th>バーコード</th><th>JAN</th><th>数量</th><th>金額</th>" & vbLf
-    sb = sb & "    </tr></thead>" & vbLf
-    sb = sb & "    <tbody>" & vbLf
-    sb = sb & items
-    sb = sb & "    </tbody>" & vbLf
-    sb = sb & "  </table>" & vbLf
-    sb = sb & "  </div>" & vbLf
-    sb = sb & "</body>" & vbLf
-    sb = sb & "</html>"
-
-    BuildPageHtml = sb
-End Function
-
-Public Function BuildEan13Svg(jan As String) As String
     Dim bits As String
-    Dim totalModules As Long
-    Dim svgWidth As Double
-    Dim svgHeight As Double
+    bits = BuildEan13Bits(jan)
+
+    ws.Rows(rowNum).RowHeight = ROW_H
+
+    ws.Cells(rowNum, 1).Value = productName
+    ws.Cells(rowNum, 3).Value = "'" & jan
+    If IsNumeric(quantity) Then
+        ws.Cells(rowNum, 4).Value = CLng(quantity)
+    Else
+        ws.Cells(rowNum, 4).Value = quantity
+    End If
+    If IsNumeric(price) Then
+        ws.Cells(rowNum, 5).Value = CDbl(price)
+    Else
+        ws.Cells(rowNum, 5).Value = price
+    End If
+
+    With ws.Cells(rowNum, 1)
+        .Font.Size = 9
+        .WrapText = True
+        .VerticalAlignment = xlCenter
+    End With
+    With ws.Cells(rowNum, 3)
+        .Font.Name = "Courier New"
+        .Font.Size = 9
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlBottom
+    End With
+    With ws.Cells(rowNum, 4)
+        .HorizontalAlignment = xlRight
+        .VerticalAlignment = xlCenter
+        .Font.Bold = True
+        .Font.Size = 11
+        .Font.Color = RGB(0, 102, 204)
+    End With
+    With ws.Cells(rowNum, 5)
+        .NumberFormat = "¥#,##0"
+        .HorizontalAlignment = xlRight
+        .VerticalAlignment = xlCenter
+        .Font.Bold = True
+        .Font.Size = 11
+        .Font.Color = RGB(204, 102, 0)
+    End With
+
+    With ws.Range(ws.Cells(rowNum, 1), ws.Cells(rowNum, 5)).Borders(xlEdgeBottom)
+        .LineStyle = xlContinuous
+        .Color = RGB(200, 200, 200)
+        .Weight = xlThin
+    End With
+
+    Dim cellLeft As Double
+    Dim cellTop As Double
+    Dim cellWidth As Double
+    cellLeft = ws.Columns(2).Left
+    cellTop = ws.Rows(rowNum).Top
+    cellWidth = ws.Columns(2).Width
+
+    Dim barcodeWidth As Double
+    barcodeWidth = (Len(bits) + QZ * 2) * MOD_PT
+    Dim startX As Double
+    startX = cellLeft + (cellWidth - barcodeWidth) / 2 + QZ * MOD_PT
+
     Dim x As Double
+    Dim inBar As Boolean
+    Dim barStart As Double
+    Dim barWidth As Double
     Dim i As Long
     Dim ch As String
-    Dim bars As String
-    Dim textY As Double
-    Dim textElems As String
-    Dim fontSize As Double
-    Dim leftStart As Double
-    Dim rightStart As Double
-    Dim leftWidth As Double
-    Dim svgOut As String
 
-    bits = BuildEan13Bits(jan)
-    If LenB(bits) = 0 Then
-        BuildEan13Svg = ""
-        Exit Function
-    End If
-
-    totalModules = Len(bits) + QUIET_ZONE * 2
-    svgWidth = totalModules * MODULE_WIDTH
-    svgHeight = BAR_HEIGHT + 20
-
-    x = QUIET_ZONE * MODULE_WIDTH
+    x = startX
+    inBar = False
 
     For i = 1 To Len(bits)
         ch = Mid$(bits, i, 1)
         If ch = "1" Then
-            bars = bars & "<rect x=""" & FormatNum(x) & """ y=""0"" "
-            bars = bars & "width=""" & FormatNum(MODULE_WIDTH) & """ "
-            bars = bars & "height=""" & FormatNum(BAR_HEIGHT) & """ fill=""#000""/>"
+            If Not inBar Then
+                barStart = x
+                barWidth = MOD_PT
+                inBar = True
+            Else
+                barWidth = barWidth + MOD_PT
+            End If
+        Else
+            If inBar Then
+                AddBar ws, barStart, cellTop + 4, barWidth, BAR_H
+                inBar = False
+            End If
         End If
-        x = x + MODULE_WIDTH
+        x = x + MOD_PT
     Next i
+    If inBar Then AddBar ws, barStart, cellTop + 4, barWidth, BAR_H
+End Sub
 
-    textY = BAR_HEIGHT + 14
-    fontSize = 14
-
-    textElems = textElems & "<text x=""" & FormatNum(QUIET_ZONE * MODULE_WIDTH - 2) & """"
-    textElems = textElems & " y=""" & FormatNum(textY) & """"
-    textElems = textElems & " font-family=""monospace"" font-size=""" & FormatNum(fontSize) & """"
-    textElems = textElems & " text-anchor=""end"">" & Mid$(jan, 1, 1) & "</text>"
-
-    leftStart = QUIET_ZONE * MODULE_WIDTH + 3 * MODULE_WIDTH
-    leftWidth = 7 * 6 * MODULE_WIDTH
-    textElems = textElems & "<text x=""" & FormatNum(leftStart + leftWidth / 2) & """"
-    textElems = textElems & " y=""" & FormatNum(textY) & """"
-    textElems = textElems & " font-family=""monospace"" font-size=""" & FormatNum(fontSize) & """"
-    textElems = textElems & " text-anchor=""middle"""
-    textElems = textElems & " letter-spacing=""" & FormatNum(MODULE_WIDTH * 2) & """>"
-    textElems = textElems & Mid$(jan, 2, 6) & "</text>"
-
-    rightStart = leftStart + leftWidth + 5 * MODULE_WIDTH
-    textElems = textElems & "<text x=""" & FormatNum(rightStart + leftWidth / 2) & """"
-    textElems = textElems & " y=""" & FormatNum(textY) & """"
-    textElems = textElems & " font-family=""monospace"" font-size=""" & FormatNum(fontSize) & """"
-    textElems = textElems & " text-anchor=""middle"""
-    textElems = textElems & " letter-spacing=""" & FormatNum(MODULE_WIDTH * 2) & """>"
-    textElems = textElems & Mid$(jan, 8, 6) & "</text>"
-
-    svgOut = "<svg xmlns=""http://www.w3.org/2000/svg"""
-    svgOut = svgOut & " width=""" & FormatNum(svgWidth) & """"
-    svgOut = svgOut & " height=""" & FormatNum(svgHeight) & """"
-    svgOut = svgOut & " viewBox=""0 0 " & FormatNum(svgWidth) & " " & FormatNum(svgHeight) & """"
-    svgOut = svgOut & " shape-rendering=""crispEdges"">"
-    svgOut = svgOut & "<rect width=""" & FormatNum(svgWidth) & """ height=""" & FormatNum(svgHeight) & """ fill=""#fff""/>"
-    svgOut = svgOut & bars & textElems & "</svg>"
-
-    BuildEan13Svg = svgOut
-End Function
+Private Sub AddBar(ws As Worksheet, left As Double, top As Double, width As Double, height As Double)
+    Dim shp As Shape
+    Set shp = ws.Shapes.AddShape(msoShapeRectangle, left, top, width, height)
+    With shp
+        .Fill.ForeColor.RGB = RGB(0, 0, 0)
+        .Fill.Solid
+        .Line.Visible = msoFalse
+        .LockAspectRatio = msoFalse
+    End With
+End Sub
 
 Private Function BuildEan13Bits(jan As String) As String
     Dim firstDigit As Long
@@ -334,46 +324,3 @@ Private Function NormalizeJan(v As Variant) As String
     s = Replace(s, vbTab, "")
     NormalizeJan = s
 End Function
-
-Private Function HtmlEscape(s As String) As String
-    Dim t As String
-    t = s
-    t = Replace(t, "&", "&amp;")
-    t = Replace(t, "<", "&lt;")
-    t = Replace(t, ">", "&gt;")
-    t = Replace(t, """", "&quot;")
-    HtmlEscape = t
-End Function
-
-Private Function FormatNum(n As Double) As String
-    FormatNum = Format(n, "0.##")
-End Function
-
-Private Function MakeTempPath() As String
-    ' Excel for Mac サンドボックスから確実に書ける ~/Documents/ に出力
-    ' （使い終わったらユーザーが任意で削除する想定）
-    Dim baseDir As String
-    Dim fileName As String
-
-    baseDir = Environ("HOME") & "/Documents/"
-    fileName = "barcode_" & Format(Now, "yyyymmdd_hhmmss") & ".html"
-    MakeTempPath = baseDir & fileName
-End Function
-
-Private Sub WriteTextFile(path As String, content As String)
-    Dim fileNum As Integer
-    fileNum = FreeFile
-    Open path For Output As #fileNum
-    Print #fileNum, content;
-    Close #fileNum
-End Sub
-
-Private Sub OpenInBrowser(path As String)
-    On Error Resume Next
-    Dim cmd As String
-    ' open コマンドで既存ブラウザの新タブで開く
-    cmd = "do shell script ""open "" & quoted form of """ & path & """"
-    MacScript cmd
-    If Err.Number <> 0 Then Err.Clear
-    On Error GoTo 0
-End Sub
