@@ -161,14 +161,16 @@ Private Function BuildPageHtml(items As String, okCount As Long) As String
     sb = sb & "    header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }" & vbLf
     sb = sb & "    header h1 { font-size: 18px; margin: 0; }" & vbLf
     sb = sb & "    header .info { font-size: 12px; color: #555; }" & vbLf
-    sb = sb & "    table { border-collapse: collapse; width: 100%; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.12); }" & vbLf
+    sb = sb & "    .wrap { overflow-x: auto; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.12); }" & vbLf
+    sb = sb & "    table { border-collapse: collapse; width: max-content; min-width: 100%; background: #fff; }" & vbLf
     sb = sb & "    thead th { background: #333; color: #fff; padding: 10px 14px; text-align: center; font-size: 13px; white-space: nowrap; }" & vbLf
     sb = sb & "    tbody tr { border-bottom: 1px solid #e0e0e0; page-break-inside: avoid; }" & vbLf
     sb = sb & "    tbody tr:nth-child(even) { background: #fafafa; }" & vbLf
     sb = sb & "    tbody tr:hover { background: #e8f4ff; }" & vbLf
     sb = sb & "    td { padding: 10px 14px; vertical-align: middle; }" & vbLf
-    sb = sb & "    td.name { font-size: 14px; font-weight: bold; line-height: 1.4; min-width: 180px; }" & vbLf
-    sb = sb & "    td.barcode { text-align: center; white-space: nowrap; padding: 6px 14px; }" & vbLf
+    sb = sb & "    td.name { font-size: 14px; font-weight: bold; line-height: 1.4; min-width: 200px; }" & vbLf
+    sb = sb & "    td.barcode { text-align: center; padding: 6px 14px; min-width: 380px; }" & vbLf
+    sb = sb & "    td.barcode svg { display: block; margin: 0 auto; }" & vbLf
     sb = sb & "    td.jan { font-family: 'Menlo', 'Courier New', monospace; font-size: 14px; font-weight: bold; white-space: nowrap; text-align: center; letter-spacing: 1px; }" & vbLf
     sb = sb & "    td.qty { text-align: right; font-size: 18px; font-weight: bold; color: #0066cc; white-space: nowrap; min-width: 60px; }" & vbLf
     sb = sb & "    td.price { text-align: right; font-size: 18px; font-weight: bold; color: #cc6600; white-space: nowrap; min-width: 80px; }" & vbLf
@@ -184,6 +186,7 @@ Private Function BuildPageHtml(items As String, okCount As Long) As String
     sb = sb & "    <h1>バーコード一覧</h1>" & vbLf
     sb = sb & "    <div class=""info"">出力件数: " & okCount & " 件 / 出力日時: " & Format(Now, "yyyy/mm/dd hh:mm") & "</div>" & vbLf
     sb = sb & "  </header>" & vbLf
+    sb = sb & "  <div class=""wrap"">" & vbLf
     sb = sb & "  <table>" & vbLf
     sb = sb & "    <thead><tr>" & vbLf
     sb = sb & "      <th>商品名</th><th>バーコード</th><th>JAN</th><th>数量</th><th>金額</th>" & vbLf
@@ -192,6 +195,7 @@ Private Function BuildPageHtml(items As String, okCount As Long) As String
     sb = sb & items
     sb = sb & "    </tbody>" & vbLf
     sb = sb & "  </table>" & vbLf
+    sb = sb & "  </div>" & vbLf
     sb = sb & "</body>" & vbLf
     sb = sb & "</html>"
 
