@@ -200,7 +200,7 @@ Private Sub DrawBarcodeRow(ws As Worksheet, rowNum As Long, jan As String, produ
         .Font.Color = RGB(0, 102, 204)
     End With
     With ws.Cells(rowNum, 5)
-        .NumberFormat = "¥#,##0"
+        .NumberFormat = """¥""#,##0"
         .HorizontalAlignment = xlRight
         .VerticalAlignment = xlCenter
         .Font.Bold = True
