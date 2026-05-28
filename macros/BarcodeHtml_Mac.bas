@@ -365,15 +365,11 @@ Private Sub WriteTextFile(path As String, content As String)
 End Sub
 
 Private Sub OpenInBrowser(path As String)
-    ' macOS: AppleScript の "do shell script" 経由で open コマンドを呼ぶ
-    ' MacScript は Microsoft 365 で不安定なため AppleScriptTask 形式を使用
     On Error Resume Next
     Dim cmd As String
-    cmd = "tell application """ & "Finder" & """ to open POSIX file """ & path & """"
+    ' open コマンドで既存ブラウザの新タブで開く
+    cmd = "do shell script ""open "" & quoted form of """ & path & """"
     MacScript cmd
-    If Err.Number <> 0 Then
-        ' フォールバック: Finder で開けない場合は何もしない（ファイルは保存済み）
-        Err.Clear
-    End If
+    If Err.Number <> 0 Then Err.Clear
     On Error GoTo 0
 End Sub

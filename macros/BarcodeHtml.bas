@@ -402,14 +402,14 @@ End Sub
 Private Sub OpenInBrowser(path As String)
     On Error Resume Next
 #If Mac Then
-    ' Finder 経由で開く（既定のブラウザが起動）
+    ' macOS: open コマンドで既存ブラウザの新タブで開く
     Dim cmd As String
-    cmd = "tell application """ & "Finder" & """ to open POSIX file """ & path & """"
+    cmd = "do shell script ""open "" & quoted form of """ & path & """"
     MacScript cmd
 #Else
-    ' Windows: 既定のブラウザで開く
-    CreateObject("Shell.Application").Open path
+    ' Windows: start コマンドで既存ブラウザの新タブで開く
+    Shell "cmd /c start """" """ & Chr(34) & path & Chr(34), vbHide
 #End If
     If Err.Number <> 0 Then Err.Clear
-    On Error Goto 0
+    On Error GoTo 0
 End Sub
