@@ -123,15 +123,13 @@ Private Function BuildItemHtml(jan As String, productName As String, quantity As
 
     priceText = FormatPrice(price)
 
-    sb = "    <div class=""item"">" & vbLf
-    sb = sb & "      <div class=""name"">" & HtmlEscape(productName) & "</div>" & vbLf
-    sb = sb & "      <div class=""barcode"">" & svg & "</div>" & vbLf
-    sb = sb & "      <div class=""jan"">" & jan & "</div>" & vbLf
-    sb = sb & "      <div class=""meta"">"
-    sb = sb & "<span class=""qty""><span class=""label"">数量</span><span class=""val"">" & qtyText & "</span></span>"
-    sb = sb & "<span class=""price""><span class=""label"">金額</span><span class=""val"">" & priceText & "</span></span>"
-    sb = sb & "</div>" & vbLf
-    sb = sb & "    </div>" & vbLf
+    sb = "    <tr>" & vbLf
+    sb = sb & "      <td class=""name"">" & HtmlEscape(productName) & "</td>" & vbLf
+    sb = sb & "      <td class=""barcode"">" & svg & "</td>" & vbLf
+    sb = sb & "      <td class=""jan"">" & jan & "</td>" & vbLf
+    sb = sb & "      <td class=""qty"">" & qtyText & "</td>" & vbLf
+    sb = sb & "      <td class=""price"">" & priceText & "</td>" & vbLf
+    sb = sb & "    </tr>" & vbLf
 
     BuildItemHtml = sb
 End Function
@@ -163,26 +161,21 @@ Private Function BuildPageHtml(items As String, okCount As Long) As String
     sb = sb & "    header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }" & vbLf
     sb = sb & "    header h1 { font-size: 18px; margin: 0; }" & vbLf
     sb = sb & "    header .info { font-size: 12px; color: #555; }" & vbLf
-    sb = sb & "    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }" & vbLf
-    sb = sb & "    .item { background: #fff; border: 2px solid #333; border-radius: 8px; padding: 14px; page-break-inside: avoid; display: flex; flex-direction: column; gap: 8px; }" & vbLf
-    sb = sb & "    .name { font-size: 16px; font-weight: bold; line-height: 1.35; min-height: 2.7em; color: #111; border-bottom: 1px dashed #ccc; padding-bottom: 6px; }" & vbLf
-    sb = sb & "    .barcode { text-align: center; padding: 4px 0; }" & vbLf
-    sb = sb & "    .barcode svg { max-width: 100%; height: auto; }" & vbLf
-    sb = sb & "    .jan { font-family: 'Menlo', 'Courier New', monospace; font-size: 18px; font-weight: bold; text-align: center; letter-spacing: 1px; color: #000; background: #f0f0f0; padding: 4px 0; border-radius: 4px; }" & vbLf
-    sb = sb & "    .meta { display: flex; justify-content: space-between; gap: 8px; margin-top: 4px; }" & vbLf
-    sb = sb & "    .meta > span { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 6px; border-radius: 4px; }" & vbLf
-    sb = sb & "    .meta .label { font-size: 11px; color: #666; }" & vbLf
-    sb = sb & "    .meta .val { font-size: 20px; font-weight: bold; }" & vbLf
-    sb = sb & "    .qty { background: #e8f4ff; }" & vbLf
-    sb = sb & "    .qty .val { color: #0066cc; }" & vbLf
-    sb = sb & "    .price { background: #fff4e6; }" & vbLf
-    sb = sb & "    .price .val { color: #cc6600; }" & vbLf
+    sb = sb & "    table { border-collapse: collapse; width: 100%; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.12); }" & vbLf
+    sb = sb & "    thead th { background: #333; color: #fff; padding: 10px 14px; text-align: center; font-size: 13px; white-space: nowrap; }" & vbLf
+    sb = sb & "    tbody tr { border-bottom: 1px solid #e0e0e0; page-break-inside: avoid; }" & vbLf
+    sb = sb & "    tbody tr:nth-child(even) { background: #fafafa; }" & vbLf
+    sb = sb & "    tbody tr:hover { background: #e8f4ff; }" & vbLf
+    sb = sb & "    td { padding: 10px 14px; vertical-align: middle; }" & vbLf
+    sb = sb & "    td.name { font-size: 14px; font-weight: bold; line-height: 1.4; min-width: 180px; }" & vbLf
+    sb = sb & "    td.barcode { text-align: center; white-space: nowrap; padding: 6px 14px; }" & vbLf
+    sb = sb & "    td.jan { font-family: 'Menlo', 'Courier New', monospace; font-size: 14px; font-weight: bold; white-space: nowrap; text-align: center; letter-spacing: 1px; }" & vbLf
+    sb = sb & "    td.qty { text-align: right; font-size: 18px; font-weight: bold; color: #0066cc; white-space: nowrap; min-width: 60px; }" & vbLf
+    sb = sb & "    td.price { text-align: right; font-size: 18px; font-weight: bold; color: #cc6600; white-space: nowrap; min-width: 80px; }" & vbLf
     sb = sb & "    @media print {" & vbLf
     sb = sb & "      body { background: #fff; margin: 8mm; }" & vbLf
-    sb = sb & "      header { border-bottom: 1px solid #999; padding-bottom: 4px; }" & vbLf
-    sb = sb & "      .item { border-color: #000; }" & vbLf
-    sb = sb & "      .qty, .price { background: #fff; border: 1px solid #999; }" & vbLf
-    sb = sb & "      .jan { background: #fff; border: 1px solid #999; }" & vbLf
+    sb = sb & "      thead th { background: #333 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }" & vbLf
+    sb = sb & "      tbody tr { border-bottom: 1px solid #999; }" & vbLf
     sb = sb & "    }" & vbLf
     sb = sb & "  </style>" & vbLf
     sb = sb & "</head>" & vbLf
@@ -191,9 +184,14 @@ Private Function BuildPageHtml(items As String, okCount As Long) As String
     sb = sb & "    <h1>バーコード一覧</h1>" & vbLf
     sb = sb & "    <div class=""info"">出力件数: " & okCount & " 件 / 出力日時: " & Format(Now, "yyyy/mm/dd hh:mm") & "</div>" & vbLf
     sb = sb & "  </header>" & vbLf
-    sb = sb & "  <div class=""grid"">" & vbLf
+    sb = sb & "  <table>" & vbLf
+    sb = sb & "    <thead><tr>" & vbLf
+    sb = sb & "      <th>商品名</th><th>バーコード</th><th>JAN</th><th>数量</th><th>金額</th>" & vbLf
+    sb = sb & "    </tr></thead>" & vbLf
+    sb = sb & "    <tbody>" & vbLf
     sb = sb & items
-    sb = sb & "  </div>" & vbLf
+    sb = sb & "    </tbody>" & vbLf
+    sb = sb & "  </table>" & vbLf
     sb = sb & "</body>" & vbLf
     sb = sb & "</html>"
 
@@ -264,10 +262,11 @@ Public Function BuildEan13Svg(jan As String) As String
     textElems = textElems & " letter-spacing=""" & FormatNum(MODULE_WIDTH * 2) & """>"
     textElems = textElems & Mid$(jan, 8, 6) & "</text>"
 
-    svgOut = "<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""0 0 "
-    svgOut = svgOut & FormatNum(svgWidth) & " " & FormatNum(svgHeight)
-    svgOut = svgOut & """ preserveAspectRatio=""xMidYMid meet"">"
-    svgOut = svgOut & "<rect width=""100%"" height=""100%"" fill=""#fff""/>"
+    svgOut = "<svg xmlns=""http://www.w3.org/2000/svg"""
+    svgOut = svgOut & " width=""" & FormatNum(svgWidth) & """"
+    svgOut = svgOut & " height=""" & FormatNum(svgHeight) & """"
+    svgOut = svgOut & " viewBox=""0 0 " & FormatNum(svgWidth) & " " & FormatNum(svgHeight) & """>"
+    svgOut = svgOut & "<rect width=""" & FormatNum(svgWidth) & """ height=""" & FormatNum(svgHeight) & """ fill=""#fff""/>"
     svgOut = svgOut & bars & textElems & "</svg>"
 
     BuildEan13Svg = svgOut
