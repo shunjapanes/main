@@ -12,7 +12,7 @@ Attribute VB_Name = "BarcodeHtml"
 '==============================================================
 Option Explicit
 
-Private Const MODULE_WIDTH As Double = 2
+Private Const MODULE_WIDTH As Double = 3
 Private Const BAR_HEIGHT As Double = 80
 Private Const QUIET_ZONE As Double = 10
 
@@ -267,7 +267,8 @@ Public Function BuildEan13Svg(jan As String) As String
     svgOut = "<svg xmlns=""http://www.w3.org/2000/svg"""
     svgOut = svgOut & " width=""" & FormatNum(svgWidth) & """"
     svgOut = svgOut & " height=""" & FormatNum(svgHeight) & """"
-    svgOut = svgOut & " viewBox=""0 0 " & FormatNum(svgWidth) & " " & FormatNum(svgHeight) & """>"
+    svgOut = svgOut & " viewBox=""0 0 " & FormatNum(svgWidth) & " " & FormatNum(svgHeight) & """"
+    svgOut = svgOut & " shape-rendering=""crispEdges"">"
     svgOut = svgOut & "<rect width=""" & FormatNum(svgWidth) & """ height=""" & FormatNum(svgHeight) & """ fill=""#fff""/>"
     svgOut = svgOut & bars & textElems & "</svg>"
 
