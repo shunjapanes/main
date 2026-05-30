@@ -1,0 +1,10 @@
+Windows Registry Editor Version 5.00
+
+; CheckListMacro - VBAプロジェクトアクセス許可設定
+; このファイルをダブルクリックすると「VBAプロジェクトオブジェクトモデルへのアクセスを信頼する」
+; が自動で有効になります。適用後はExcelを再起動してください。
+;
+; 対象: Excel 2016 / 2019 / Microsoft 365 (バージョン 16.0)
+
+[HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\Excel\Security]
+"AccessVBOM"=dword:00000001
