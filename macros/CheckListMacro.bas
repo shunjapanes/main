@@ -1,36 +1,41 @@
 '==============================================================
 ' モジュール名：CheckListMacro
-' 目的：検証・本番作業チェックリストで、氏名セルをダブルクリックすると
-'       担当者名と日時を自動入力する。手入力を廃止してワンアクション化する。
+' 目的：検証・本番作業チェックリストで、打刻したいセルを選択して
+'       「打刻」ボタンを押すと担当者名と日時を自動入力する。
+'       特別なExcel設定変更が不要で、複数ユーザーがそのまま使える。
 '
 ' シート構成（2行ヘッダー、データは3行目から）：
 '   A列：カテゴリ
 '   B列：項目
-'   C列：検証 作業者   ← ダブルクリックで氏名・D列に日時が入る
-'   D列：検証 作業日   ← 自動入力（直接ダブルクリック不要）
-'   E列：検証 確認者   ← ダブルクリックで氏名・F列に日時が入る
+'   C列：検証 作業者   ← 選択して打刻ボタン → D列に日時が入る
+'   D列：検証 作業日   ← 自動入力
+'   E列：検証 確認者   ← 選択して打刻ボタン → F列に日時が入る
 '   F列：検証 確認日   ← 自動入力
-'   G列：本番 作業者   ← ダブルクリックで氏名・H列に日時が入る
+'   G列：本番 作業者   ← 選択して打刻ボタン → H列に日時が入る
 '   H列：本番 作業日   ← 自動入力
-'   I列：本番 確認者   ← ダブルクリックで氏名・J列に日時が入る
+'   I列：本番 確認者   ← 選択して打刻ボタン → J列に日時が入る
 '   J列：本番 確認日   ← 自動入力
-'   K列：課長承認      ← ダブルクリックで氏名・L列に日時が入る
+'   K列：課長承認      ← 選択して打刻ボタン → L列に日時が入る
 '   L列：承認日        ← 自動入力
+'   M列：打刻ボタン    ← SetupSheet で自動配置される
 '
 ' 氏名の決まり方：
 '   「Users」シートの対応表にヒット → 表示名（例: m.matsumoto）
 '   未登録の場合 → Windowsアカウント名を小文字にしてそのまま使う
 '
-' 導入手順：
+' 導入手順（初回のみ・管理者が1回実行するだけ）：
 '   1. このファイルをインポート（Windowsは CheckListMacro_Win.bas を使う）
 '   2. SetupUsersSheet を実行 → 「Users」シートを作り対応表を登録する
-'   3. チェックシートをアクティブにして SetupSheet を実行 → 見出しが整う
-'   4. SetupSheetEvents を実行 → ダブルクリック打刻が有効になる
-'   ※ 複数シートで使う場合：3から4をシートごとに実行するだけ
+'   3. チェックシートをアクティブにして SetupSheet を実行
+'      → 見出し・色分け・列幅・打刻ボタンがすべて整う
+'   ※ 複数シートで使う場合：3をシートごとに実行するだけ
+'   ※ 利用ユーザー側は何も設定変更不要
+'
+' 日常の使い方：
+'   1. 打刻したい「作業者」「確認者」「課長承認」のセルを1クリックで選ぶ
+'   2. M列の「打刻」ボタンを押す → 氏名と日時が入る
 '
 ' 注意：
-'   ・SetupSheetEvents は Excel の「VBAプロジェクト オブジェクト モデルへの
-'     アクセスを信頼する」が必要。エラーが出たら設定方法のメッセージが出る。
 '   ・シートが保護されていると動かない（保護を解除してから使う）
 '   ・打刻済みのセルでも上書きされる（確認は出さないシンプル仕様）
 '==============================================================
@@ -40,8 +45,9 @@ Option Explicit
 Private Const SHEET_USERS    As String = "Users"            ' 氏名対応表シートの名前
 Private Const DATA_START_ROW As Long   = 3                  ' データ開始行（ヘッダー2行）
 Private Const DATE_FORMAT    As String = "yyyy/mm/dd hh:nn" ' 日時の表示形式
+Private Const COL_STAMP_BTN  As Long   = 13                 ' M列: 打刻ボタンを置く列
 
-' 打刻列の番号（作業者/確認者列をダブルクリック → 隣の日付列に日時が入る）
+' 打刻対象の列（これらのセルを選択して打刻ボタンを押す）
 Private Const COL_KENSHO_WORKER   As Long = 3   ' C列: 検証 作業者
 Private Const COL_KENSHO_WDATE    As Long = 4   ' D列: 検証 作業日
 Private Const COL_KENSHO_CHECKER  As Long = 5   ' E列: 検証 確認者
@@ -54,31 +60,52 @@ Private Const COL_APPROVAL        As Long = 11  ' K列: 課長承認
 Private Const COL_APPROVAL_DATE   As Long = 12  ' L列: 承認日
 
 '--------------------------------------------------------------
-' 【処理名】ダブルクリック打刻（シートのイベントから呼ばれる）
-' 【やること】ダブルクリックされたセルが打刻対象の列なら氏名と日時を入れる
-' 【引数】
-'   Target ： ダブルクリックされたセル
-' 【戻り値】
-'   True  = 打刻した（Excelのデフォルト動作＝編集モード移行をキャンセルする）
-'   False = 打刻しなかった（デフォルトのままにする）
-' 【注意】このFunctionはシートモジュールの Worksheet_BeforeDoubleClick から
-'         呼ばれる。SetupSheetEvents で自動登録される。
+' 【処理名】打刻ボタンから呼ばれるメイン処理
+' 【やること】今選択中のセルが打刻対象の列なら氏名と日時を入れる
+' 【使い方】M列の「打刻」ボタンにこのマクロを割り当てる（SetupSheetで自動設定）
+' 【注意】C/E/G/I/K列以外を選んでいる場合はガイドメッセージを表示する
 '--------------------------------------------------------------
-Public Function StampOnDoubleClick(Target As Range) As Boolean
-    StampOnDoubleClick = False
+Public Sub StampSelectedCell()
+    ' ボタンを押したとき選択中のセルが打刻対象かチェックする
+    If TypeName(Selection) <> "Range" Then Exit Sub
 
-    ' 複数セル選択の場合は何もしない
-    If Target.Cells.Count > 1 Then Exit Function
+    Dim target As Range
+    Set target = Selection.Cells(1)   ' 複数選択でも左上の1セルだけを対象にする
+
+    If StampCell(target) Then
+        ' 打刻成功 → 何も出さずに静かに完了（視覚的に確認できるため）
+    Else
+        ' 打刻対象外の列を選んでいた場合
+        MsgBox "打刻できる列を選択してください。" & vbCrLf & vbCrLf & _
+               "  検証  : C列（作業者）または E列（確認者）" & vbCrLf & _
+               "  本番  : G列（作業者）または I列（確認者）" & vbCrLf & _
+               "  承認  : K列（課長承認）" & vbCrLf & vbCrLf & _
+               "セルを選んでからもう一度ボタンを押してください。", _
+               vbExclamation, "列を選んでください"
+    End If
+End Sub
+
+'--------------------------------------------------------------
+' 【処理名】セルへの打刻（内部処理）
+' 【やること】指定セルが打刻対象の列なら氏名と日時を入れる
+' 【引数】
+'   target ： 打刻するセル
+' 【戻り値】
+'   True  = 打刻した
+'   False = 打刻対象外の列だった
+'--------------------------------------------------------------
+Private Function StampCell(target As Range) As Boolean
+    StampCell = False
 
     Dim r As Long
     Dim c As Long
-    r = Target.Row
-    c = Target.Column
+    r = target.Row
+    c = target.Column
 
     ' ヘッダー行（1から2行目）への打刻は無視する
     If r < DATA_START_ROW Then Exit Function
 
-    ' 打刻対象の列か判定し、対応する日付列番号を決める
+    ' 選択列が打刻対象か判定し、対応する日付列を決める
     Dim dateCol As Long
     dateCol = 0
     Select Case c
@@ -89,14 +116,13 @@ Public Function StampOnDoubleClick(Target As Range) As Boolean
         Case COL_APPROVAL:        dateCol = COL_APPROVAL_DATE
     End Select
 
-    ' 打刻対象列でなければ通常の編集モードに任せる
-    If dateCol = 0 Then Exit Function
+    If dateCol = 0 Then Exit Function   ' 打刻対象外
 
     ' 氏名と日時を入れる
-    Target.Value = GetDisplayName()
-    Target.Worksheet.Cells(r, dateCol).Value = Format(Now, DATE_FORMAT)
+    target.Value = GetDisplayName()
+    target.Worksheet.Cells(r, dateCol).Value = Format(Now, DATE_FORMAT)
 
-    StampOnDoubleClick = True   ' 編集モードへの移行をキャンセルさせる
+    StampCell = True
 End Function
 
 '--------------------------------------------------------------
@@ -173,72 +199,10 @@ Public Sub ShowMyUserName()
 End Sub
 
 '--------------------------------------------------------------
-' 【処理名】シートへのダブルクリックイベント設定
-' 【やること】アクティブシートのモジュールに Worksheet_BeforeDoubleClick を
-'             自動で書き込み、ダブルクリック打刻を有効にする
-' 【注意】Excelの設定で「VBAプロジェクト オブジェクト モデルへのアクセスを
-'         信頼する」をオンにしていないとエラーになる。
-'         エラーが出たら表示されるメッセージの手順で設定してください。
-'--------------------------------------------------------------
-Public Sub SetupSheetEvents()
-    On Error GoTo ErrorHandler
-
-    Dim ws As Worksheet
-    Dim vbComp As Object
-    Dim cm As Object
-    Dim i As Long
-
-    Set ws = ActiveSheet
-
-    ' シートのVBAモジュールを取得する（ここでアクセス権エラーが出る場合あり）
-    Set vbComp = ThisWorkbook.VBProject.VBComponents(ws.CodeName)
-    Set cm = vbComp.CodeModule
-
-    ' 既に設定済みか確認する（二重登録を防ぐ）
-    For i = 1 To cm.CountOfLines
-        If InStr(cm.Lines(i, 1), "StampOnDoubleClick") > 0 Then
-            MsgBox "「" & ws.Name & "」シートには既にダブルクリック打刻が設定されています。", _
-                   vbInformation, "スキップ"
-            Exit Sub
-        End If
-    Next i
-
-    ' BeforeDoubleClick イベントを書き込む
-    ' シートモジュールからStandardモジュールのPublic関数を呼ぶだけの最小コード
-    cm.AddFromString _
-        "Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Range, Cancel As Boolean)" & vbCrLf & _
-        "    If StampOnDoubleClick(Target) Then Cancel = True" & vbCrLf & _
-        "End Sub"
-
-    MsgBox "「" & ws.Name & "」シートへのダブルクリック打刻を設定しました。" & vbCrLf & vbCrLf & _
-           "C/E/G/I/K列のセルをダブルクリックすると氏名と日時が入ります。", _
-           vbInformation, "完了"
-
-    On Error GoTo 0
-    Exit Sub
-
-ErrorHandler:
-    ' VBAプロジェクトへのアクセスが許可されていない場合の案内
-    If Err.Number = 1004 Or Err.Number = 50289 Then
-        MsgBox "設定変更が必要です。以下の手順で許可してください：" & vbCrLf & vbCrLf & _
-               "1. Excelの「ファイル」→「オプション」を開く" & vbCrLf & _
-               "2. 「セキュリティ センター」→「セキュリティ センターの設定」" & vbCrLf & _
-               "3. 「マクロの設定」を選択" & vbCrLf & _
-               "4. 「VBA プロジェクト オブジェクト モデルへのアクセスを信頼する」に" & vbCrLf & _
-               "   チェックを入れて OK" & vbCrLf & vbCrLf & _
-               "設定後、もう一度 SetupSheetEvents を実行してください。", _
-               vbExclamation, "設定が必要です"
-    Else
-        MsgBox "予期しないエラーが発生しました。" & vbCrLf & vbCrLf & _
-               "エラー内容: " & Err.Description & vbCrLf & _
-               "エラー番号: " & Err.Number, vbCritical, "エラー"
-    End If
-End Sub
-
-'--------------------------------------------------------------
-' 【処理名】チェックシートの見出し作成
-' 【やること】2行ヘッダーの作成・セル結合・エリア別色分け・列幅整形を行う
-' 【注意】今アクティブなシートに書き込む
+' 【処理名】チェックシートの見出し・ボタン作成
+' 【やること】2行ヘッダーの作成・セル結合・エリア別色分け・列幅整形・
+'             打刻ボタン配置をまとめて行う
+' 【注意】今アクティブなシートに書き込む。何度実行しても安全（冪等）。
 '--------------------------------------------------------------
 Public Sub SetupSheet()
     On Error GoTo ErrorHandler
@@ -256,7 +220,7 @@ Public Sub SetupSheet()
     ws.Range("K1").Value = "課長承認"
     ws.Range("L1").Value = "承認日"
 
-    ' 検証設定・本番設定をそれぞれ4列分結合する
+    ' 検証設定・本番設定をそれぞれ4列分横に結合する
     ws.Range("C1:F1").Merge
     ws.Range("G1:J1").Merge
 
@@ -303,12 +267,40 @@ Public Sub SetupSheet()
     ws.Columns("J").ColumnWidth = 16
     ws.Columns("K").ColumnWidth = 12
     ws.Columns("L").ColumnWidth = 16
+    ws.Columns("M").ColumnWidth = 10
     ws.Rows("1:2").RowHeight = 28
+
+    ' --- 打刻ボタンをM1:M2の位置に配置する ---
+    ' 既存の打刻ボタンがあれば先に削除して重複を防ぐ
+    Dim i As Long
+    For i = ws.Buttons.Count To 1 Step -1
+        If ws.Buttons(i).Name = "btn_stamp" Then ws.Buttons(i).Delete
+    Next i
+
+    ' M列1行目から2行目にまたがる位置にボタンを作る
+    Dim btnLeft As Double
+    Dim btnTop As Double
+    Dim btnWidth As Double
+    Dim btnHeight As Double
+    btnLeft   = ws.Cells(1, COL_STAMP_BTN).Left
+    btnTop    = ws.Cells(1, COL_STAMP_BTN).Top
+    btnWidth  = ws.Cells(1, COL_STAMP_BTN).Width
+    btnHeight = ws.Cells(1, COL_STAMP_BTN).Top + ws.Cells(2, COL_STAMP_BTN).Height - btnTop
+
+    Dim btn As Button
+    Set btn = ws.Buttons.Add(btnLeft, btnTop, btnWidth, btnHeight)
+    btn.OnAction  = "StampSelectedCell"   ' 押したときに動くマクロ
+    btn.Caption   = "打刻"
+    btn.Name      = "btn_stamp"
+    btn.Font.Size = 12
+    btn.Font.Bold = True
 
     Application.ScreenUpdating = True
 
-    MsgBox "チェックシートの見出しを作成しました。" & vbCrLf & vbCrLf & _
-           "次に SetupSheetEvents を実行してダブルクリック打刻を有効にしてください。", _
+    MsgBox "チェックシートを設定しました。" & vbCrLf & vbCrLf & _
+           "【使い方】" & vbCrLf & _
+           "  1. 打刻したいセル（作業者・確認者・課長承認）を選ぶ" & vbCrLf & _
+           "  2. M列の「打刻」ボタンを押す", _
            vbInformation, "完了"
 
     On Error GoTo 0
@@ -330,7 +322,6 @@ Public Sub SetupUsersSheet()
 
     Dim wsUsers As Worksheet
 
-    ' 既に存在するか確認する
     On Error Resume Next
     Set wsUsers = ThisWorkbook.Worksheets(SHEET_USERS)
     On Error GoTo ErrorHandler
@@ -340,11 +331,9 @@ Public Sub SetupUsersSheet()
         Exit Sub
     End If
 
-    ' 末尾に新しいシートを作る
     Set wsUsers = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.Count))
     wsUsers.Name = SHEET_USERS
 
-    ' 見出し
     wsUsers.Cells(1, 1).Value = "Windowsアカウント名"
     wsUsers.Cells(1, 2).Value = "表示名"
     With wsUsers.Range("A1:B1")
