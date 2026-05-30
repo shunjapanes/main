@@ -62,7 +62,8 @@ Private Const COL_APPROVAL_DATE   As Long = 12  ' L列: 承認日
 
 '--------------------------------------------------------------
 ' 【処理名】ダブルクリック打刻（シートのイベントから呼ばれる）
-' 【やること】ダブルクリックされたセルが打刻対象の列なら氏名と日時を入れる
+' 【やること】ダブルクリックされたセルが打刻対象の列なら氏名と日時を入れる。
+'             Usersシートに未登録の場合は登録方法を案内してから確認を取る。
 ' 【引数】
 '   Target ： ダブルクリックされたセル
 ' 【戻り値】
@@ -98,8 +99,34 @@ Public Function StampOnDoubleClick(Target As Range) As Boolean
     ' 打刻対象列でなければ通常の編集モードに任せる
     If dateCol = 0 Then Exit Function
 
+    ' Usersシートに登録があるか確認し、未登録なら案内ダイアログを出す
+    Dim isRegistered As Boolean
+    Dim displayName As String
+    displayName = GetDisplayName(isRegistered)
+
+    If Not isRegistered Then
+        Dim account As String
+        account = GetWindowsUser()
+        Dim answer As VbMsgBoxResult
+        answer = MsgBox( _
+            "あなたのアカウント（" & account & "）は Users シートに未登録です。" & vbCrLf & vbCrLf & _
+            "【登録方法】" & vbCrLf & _
+            "1. 画面下の「Users」シートタブをクリックする" & vbCrLf & _
+            "2. A列に自分のアカウント名を入力（例: " & account & "）" & vbCrLf & _
+            "3. B列に打刻に使う表示名を入力（例: m.matsumoto）" & vbCrLf & _
+            "4. このシートに戻ってもう一度ダブルクリックする" & vbCrLf & vbCrLf & _
+            "今すぐ登録せず「" & account & "」のまま打刻しますか？", _
+            vbYesNo + vbExclamation, "Usersシートへの登録をお勧めします")
+
+        ' 「いいえ」= 登録しに行く → 打刻せずキャンセル
+        If answer = vbNo Then
+            StampOnDoubleClick = True   ' 編集モードは抑止しつつ打刻はしない
+            Exit Function
+        End If
+    End If
+
     ' 氏名と日時を入れる
-    Target.Value = GetDisplayName()
+    Target.Value = displayName
     Target.Worksheet.Cells(r, dateCol).Value = Format(Now, DATE_FORMAT)
 
     StampOnDoubleClick = True   ' 編集モードへの移行をキャンセルさせる
@@ -109,21 +136,26 @@ End Function
 ' 【処理名】打刻する氏名を取得する（対応表ルックアップ）
 ' 【やること】Windowsアカウント名をキーに「Users」シートを検索し、
 '             登録があれば表示名を、なければアカウント名（小文字）を返す
+' 【引数】
+'   isRegistered ： 戻り値。Trueなら対応表にヒット、Falseなら未登録
 ' 【注意】検索は大文字・小文字を区別しない
 '--------------------------------------------------------------
-Public Function GetDisplayName() As String
+Public Function GetDisplayName(Optional ByRef isRegistered As Boolean = True) As String
     Dim rawAccount As String
     Dim wsUsers As Worksheet
     Dim lastRow As Long
     Dim i As Long
 
     rawAccount = GetWindowsUser()
+    isRegistered = False   ' 最初は未登録扱いにしておく
 
     On Error Resume Next
     Set wsUsers = ThisWorkbook.Worksheets(SHEET_USERS)
     On Error GoTo 0
 
     If wsUsers Is Nothing Then
+        ' Usersシート自体がない場合はアカウント名をそのまま返す（登録不要とみなす）
+        isRegistered = True
         GetDisplayName = rawAccount
         Exit Function
     End If
@@ -133,12 +165,13 @@ Public Function GetDisplayName() As String
     ' 2行目から検索（1行目はヘッダー）
     For i = 2 To lastRow
         If LCase(Trim(CStr(wsUsers.Cells(i, 1).Value))) = rawAccount Then
+            isRegistered = True
             GetDisplayName = Trim(CStr(wsUsers.Cells(i, 2).Value))
             Exit Function
         End If
     Next i
 
-    ' 対応表に見つからなければアカウント名をそのまま返す
+    ' 対応表に見つからなければアカウント名をそのまま返す（isRegistered=False のまま）
     GetDisplayName = rawAccount
 End Function
 
