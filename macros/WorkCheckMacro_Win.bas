@@ -137,18 +137,25 @@ End Function
 
 '--------------------------------------------------------------
 ' 【処理名】Windowsアカウント名の取得
-' 【やること】ログイン中のユーザー名を返す
-' 【戻り値】アカウント名（例：tanaka.taro）
-' 【注意】#If Mac でMac環境にも一応対応しているが、本番はWindows想定
+' 【やること】ログイン中のユーザー名を「m.matsumoto」形式で返す
+' 【戻り値】アカウント名（小文字に揃える。例：m.matsumoto）
+' 【注意】・#If Mac でMac環境にも一応対応しているが、本番はWindows想定
+'         ・大文字混じり（M.Matsumoto / MATSUMOTO）でも小文字に統一して
+'           表記ゆれを防ぐため LCase で揃えている
 '--------------------------------------------------------------
 Private Function GetWindowsUser() As String
+    Dim rawName As String
+
 #If Mac Then
     ' Mac環境（参考）：環境変数 USER から取得
-    GetWindowsUser = Environ("USER")
+    rawName = Environ("USER")
 #Else
     ' Windows環境：環境変数 USERNAME から取得
-    GetWindowsUser = Environ("USERNAME")
+    rawName = Environ("USERNAME")
 #End If
+
+    ' 前後の空白を除き、小文字に統一する（例：M.Matsumoto → m.matsumoto）
+    GetWindowsUser = LCase(Trim(rawName))
 End Function
 
 '--------------------------------------------------------------
