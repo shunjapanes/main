@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HPチェック 修正点一覧｜2026 SUPER GT 第5戦（鈴鹿）</title>
+<style>
+  :root{
+    --crit:#c0392b; --crit-bg:#fdecea;
+    --high:#d35400; --high-bg:#fdf0e3;
+    --mid:#b7950b;  --mid-bg:#fcf6e0;
+    --low:#566573;  --low-bg:#eef1f3;
+    --chk:#1f6fb2;  --chk-bg:#e8f2fb;
+    --ok:#1e8449;   --ok-bg:#e9f7ef;
+    --ink:#1c2733; --line:#dfe4e8; --muted:#6b7882;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; color:var(--ink); background:#f4f6f8;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic UI",Meiryo,sans-serif;
+    line-height:1.65; font-size:15px;
+  }
+  .wrap{max-width:1040px; margin:0 auto; padding:24px 18px 80px}
+  header.top{
+    background:linear-gradient(135deg,#1c2733,#33485c); color:#fff;
+    border-radius:14px; padding:22px 24px; box-shadow:0 6px 18px rgba(0,0,0,.12);
+  }
+  header.top h1{margin:0 0 6px; font-size:22px}
+  header.top p{margin:2px 0; color:#d6dee6; font-size:13.5px}
+  .pill{display:inline-block;background:rgba(255,255,255,.16);border-radius:999px;padding:2px 10px;font-size:12px;margin-right:6px}
+
+  h2.sec{font-size:17px;margin:30px 0 12px;padding-left:10px;border-left:5px solid #33485c}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:14px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+  .badge{display:inline-block;border-radius:6px;padding:2px 9px;font-size:12px;font-weight:700;white-space:nowrap;line-height:1.7}
+  .b-crit{color:var(--crit);background:var(--crit-bg)}
+  .b-high{color:var(--high);background:var(--high-bg)}
+  .b-mid{color:var(--mid);background:var(--mid-bg)}
+  .b-low{color:var(--low);background:var(--low-bg)}
+  .b-chk{color:var(--chk);background:var(--chk-bg)}
+  .b-ok{color:var(--ok);background:var(--ok-bg)}
+
+  table{border-collapse:collapse;width:100%;font-size:13.5px;margin-top:4px}
+  th,td{border:1px solid var(--line);padding:7px 9px;vertical-align:top;text-align:left}
+  th{background:#f3f6f9;font-weight:700;white-space:nowrap}
+  td.loc{white-space:nowrap;color:var(--muted);font-weight:600}
+  .was{color:var(--crit);text-decoration:line-through;text-decoration-color:#e2a8a1}
+  .now{color:var(--ok);font-weight:700}
+  code{background:#eef1f3;border-radius:4px;padding:1px 5px;font-size:12.5px}
+
+  .cal{font-size:13px}
+  .cal td,.cal th{text-align:center;padding:5px 8px}
+  .cal .wknd{background:#fff7e6;font-weight:700}
+
+  .page h3{margin:0 0 4px;font-size:15.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .page .meta{font-size:12px;color:var(--muted);font-weight:400}
+  .nofix{color:var(--ok);font-size:13px;margin:6px 0 0}
+  .note{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+  .count{font-weight:700}
+  footer{margin-top:30px;color:var(--muted);font-size:12px;text-align:center}
+  @media print{
+    body{background:#fff;font-size:12px}
+    .card{box-shadow:none;break-inside:avoid}
+    header.top{box-shadow:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>HPチェック 修正点一覧</h1>
+  <p><strong>2026 AUTOBACS SUPER GT 第5戦（鈴鹿）</strong> チケット／案内ページ 校正</p>
+  <p style="margin-top:8px">
+    <span class="pill">前提：2026年版が正</span>
+    <span class="pill">基準：2026年カレンダー（date検証済）</span>
+    <span class="pill">作成：2026/06/02</span>
+  </p>
+  <p style="margin-top:8px;color:#aeb9c4">※「2025年版→2026年版へ修正依頼した校正ページ」を対象に、2025からの修正漏れ・不整合を抽出。</p>
+</header>
+
+<!-- 凡例 -->
+<h2 class="sec">凡例</h2>
+<div class="card legend">
+  <span class="badge b-crit">最重大</span>
+  <span class="badge b-high">重大</span>
+  <span class="badge b-mid">中</span>
+  <span class="badge b-low">軽微</span>
+  <span class="badge b-chk">要確認</span>
+  <span class="badge b-ok">整合OK</span>
+</div>
+
+<!-- カレンダー -->
+<h2 class="sec">2026年カレンダー（判定基準）</h2>
+<div class="card">
+  <table class="cal">
+    <tr><th>日付</th><td>7/5</td><td>7/6</td><td>7/12</td><td>7/13</td><td>8/20</td><td>8/21</td><td class="wknd">8/22</td><td class="wknd">8/23</td><td>8/24</td></tr>
+    <tr><th>曜日</th><td>日</td><td>月</td><td>日</td><td>月</td><td>木</td><td>金</td><td class="wknd">土</td><td class="wknd">日</td><td>月</td></tr>
+  </table>
+  <p class="note">開催＝<strong>8/22(土)予選・8/23(日)決勝</strong>／前日金曜＝<strong>8/21(金)</strong>。よって「8月22日（土）・23日（日）」は2026年で正しい。「8月23日（土）・24日（日）」は2025年の日程（誤り）。</p>
+</div>
+
+<!-- 全ページ共通 -->
+<h2 class="sec">全ページ共通の修正</h2>
+<div class="card">
+  <table>
+    <thead><tr><th>重要度</th><th>箇所</th><th>現状</th><th>修正案</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="badge b-crit">最重大</span></td>
+        <td class="loc">見出し／パンくず</td>
+        <td><span class="was">2025 AUTOBACS SUPER GT Round5</span></td>
+        <td><span class="now">2026 AUTOBACS SUPER GT Round5</span></td>
+      </tr>
+      <tr>
+        <td><span class="badge b-chk">要確認</span></td>
+        <td class="loc">記事公開日</td>
+        <td><code>2025/xx/xx</code> のままのページが多数</td>
+        <td>2026年版として再公開するなら2026へ更新するか、運用ポリシーを確認</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="note">※以下の各ページ表では、上記「共通の修正」は省略し、<strong>ページ固有の修正点のみ</strong>を記載します。</p>
+</div>
+
+<!-- ページ別 -->
+<h2 class="sec">ページ別の修正点</h2>
+
+<!-- V1 fan seat -->
+<div class="card page">
+  <h3>① V1席ファンシート観戦券 <span class="meta">公開日 2025/08/20 ／ ページ全体が2025日程のまま</span></h3>
+  <table>
+    <thead><tr><th>重要度</th><th>箇所</th><th>現状</th><th>修正案</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-high">重大</span></td><td class="loc">有効日</td><td><span class="was">8月23日（土）・24日（日）有効</span></td><td><span class="now">8月22日（土）・23日（日）有効</span></td></tr>
+      <tr><td><span class="badge b-high">重大</span></td><td class="loc">前売販売期限</td><td><span class="was">8月22日（金）23：59まで</span></td><td><span class="now">8月21日（金）23：59まで</span></td></tr>
+      <tr><td><span class="badge b-high">重大</span></td><td class="loc">前売入場</td><td><span class="was">8月22日（金）入場可能</span></td><td><span class="now">8月21日（金）入場可能</span></td></tr>
+      <tr><td><span class="badge b-high">重大</span></td><td class="loc">座席選択開始</td><td><span class="was">7月6日（日）11:00～</span></td><td>2026の座席選択日（<strong>7/6は月曜</strong>）に修正。意図日を確認（例：7/5(日)）</td></tr>
+      <tr><td><span class="badge b-high">重大</span></td><td class="loc">グッズ引換（ARTA/Honda/NISSAN/SUBARU/TGR）</td><td><span class="was">8月23日(土)／8月24日(日)決勝日</span></td><td><span class="now">8月22日(土)／8月23日(日)決勝日</span>（各ブースの日時すべて）</td></tr>
+      <tr><td><span class="badge b-low">軽微</span></td><td class="loc">「予選日のみ観戦」注記</td><td><span class="was">8月23日（土）予選日のみ</span></td><td><span class="now">8月22日（土）予選日のみ</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- S-BOX -->
+<div class="card page">
+  <h3>② S-BOX <span class="meta">公開日 2025/07/22 ／ ヘッダーのみ2025・フッターは2026で不一致</span></h3>
+  <table>
+    <thead><tr><th>重要度</th><th>箇所</th><th>現状</th><th>修正案</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-high">重大</span></td><td class="loc">ヘッダー有効日</td><td><span class="was">※8月23日（土）・24日（日）有効</span></td><td><span class="now">※8月22日（土）・23日（日）有効</span></td></tr>
+      <tr><td><span class="badge b-low">軽微</span></td><td class="loc">ページ内整合</td><td>フッター定型文は「8月22日（土）・23日（日）」で正しく、ヘッダーと矛盾</td><td>ヘッダー修正で解消</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- チケット一覧 -->
+<div class="card page">
+  <h3>③ チケット一覧（トップ） <span class="meta">公開日 2026/06/11</span></h3>
+  <table>
+    <thead><tr><th>重要度</th><th>箇所</th><th>現状</th><th>修正案</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-mid">中</span></td><td class="loc">誤字（販売窓口案内）</td><td><span class="was">鹿サーキット・モビリティリゾートもてぎ</span></td><td><span class="now">鈴鹿サーキット・モビリティリゾートもてぎ</span></td></tr>
+      <tr><td><span class="badge b-chk">要確認</span></td><td class="loc">記事公開日</td><td><code>2026/06/11</code>（本日2026/06/02より未来日）</td><td>予約公開日か誤りか確認</td></tr>
+      <tr><td><span class="badge b-ok">整合OK</span></td><td class="loc">本文年号・販売日</td><td>「2026 AUTOBACS…」「7/12(日)」「7/13(月)」</td><td>修正不要（2026で正しい）</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 当日駐車場 -->
+<div class="card page">
+  <h3>④ 当日駐車場 <span class="meta">公開日 2000/01/01</span></h3>
+  <table>
+    <thead><tr><th>重要度</th><th>箇所</th><th>現状</th><th>修正案</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-mid">中</span></td><td class="loc">記事公開日</td><td><span class="was">2000/01/01</span>（プレースホルダ）</td><td><span class="now">正しい公開日</span></td></tr>
+      <tr><td><span class="badge b-mid">中</span></td><td class="loc">誤字</td><td><span class="was">公共交通機関でのご来場をお勤めいたします</span></td><td><span class="now">…ご来場をお勧めいたします</span></td></tr>
+      <tr><td><span class="badge b-ok">整合OK</span></td><td class="loc">2026年退出混雑予想時間／8/22(土)切替・8/21(金)退出</td><td>本文は2026で正しい</td><td>修正不要</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 前売指定駐車券 -->
+<div class="card page">
+  <h3>⑤ 前売指定駐車券 <span class="meta">公開日 2025/08/15</span></h3>
+  <table>
+    <thead><tr><th>重要度</th><th>箇所</th><th>現状</th><th>修正案</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-mid">中</span></td><td class="loc">誤字（EVのQ&amp;A）</td><td><span class="was">…電気自動車がが手配出来ます</span></td><td><span class="now">…電気自動車が手配出来ます</span></td></tr>
+      <tr><td><span class="badge b-ok">整合OK</span></td><td class="loc">有効日 8/22(土)〜8/23(日)・物流センター8/23(日)</td><td>2026で正しい</td><td>修正不要</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 入退場方法 -->
+<div class="card page">
+  <h3>⑥ 入退場方法のご案内 <span class="meta">公開日 2025/08/15</span></h3>
+  <table>
+    <thead><tr><th>重要度</th><th>箇所</th><th>現状</th><th>修正案</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-mid">中</span></td><td class="loc">誤字（駐車場一覧）</td><td><span class="was">P3（舗装）、P4、（舗装）、P5（舗装）</span></td><td><span class="now">P3（舗装）、P4（舗装）、P5（舗装）</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ホスピタリティクラブ・プライベート -->
+<div class="card page">
+  <h3>⑦ ホスピタリティクラブ・プライベート <span class="meta">公開日 2000/01/01</span></h3>
+  <table>
+    <thead><tr><th>重要度</th><th>箇所</th><th>現状</th><th>修正案</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-mid">中</span></td><td class="loc">記事公開日</td><td><span class="was">2000/01/01</span>（プレースホルダ）</td><td><span class="now">正しい公開日</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- レース観戦注意事項 -->
+<div class="card page">
+  <h3>⑧ レース観戦にあたっての注意事項 <span class="meta">公開日 2000/01/01</span></h3>
+  <table>
+    <thead><tr><th>重要度</th><th>箇所</th><th>現状</th><th>修正案</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-mid">中</span></td><td class="loc">記事公開日</td><td><span class="was">2000/01/01</span>（プレースホルダ）</td><td><span class="now">正しい公開日</span></td></tr>
+      <tr><td><span class="badge b-ok">整合OK</span></td><td class="loc">横断幕期間 8/21(金)〜23(日)・木曜不可</td><td>2026で正しい（木曜=8/20）</td><td>修正不要</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- R-BOX -->
+<div class="card page">
+  <h3>⑨ R-BOX <span class="meta">公開日 2025/08/15</span></h3>
+  <table>
+    <thead><tr><th>重要度</th><th>箇所</th><th>現状</th><th>修正案</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-chk">要確認</span></td><td class="loc">料金</td><td>M(6名)150,000円 ＞ L(8名)129,600円（少人数のMが高額）</td><td>意図的（立地等）か誤記か確認</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SMSC -->
+<div class="card page">
+  <h3>⑩ 「2026 SGT Round5」観戦券以外の入場特典案内（SMSC） <span class="meta">公開日 2025/07/17</span></h3>
+  <table>
+    <thead><tr><th>重要度</th><th>箇所</th><th>現状</th><th>修正案</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-chk">要確認</span></td><td class="loc">記事公開日</td><td>記事日付 <code>2025/07/17</code> と本文「2026」が不一致</td><td>2026へ更新を検討</td></tr>
+      <tr><td><span class="badge b-ok">整合OK</span></td><td class="loc">本文「2026年7月5日（日）頃」</td><td>7/5は日曜で正しい</td><td>修正不要</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 用語ゆれ -->
+<div class="card page">
+  <h3>⑪ 激感エリア ／ パドックパス（用語ゆれ） <span class="meta">公開日 2025/08/15 ／ 2025/08/18</span></h3>
+  <table>
+    <thead><tr><th>重要度</th><th>箇所</th><th>現状</th><th>修正案</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-low">軽微</span></td><td class="loc">場所・シャトル発着所の表記</td><td>激感エリア＝「最終コーナーイン側／センターハウス前」、パドックパス＝「逆バンクイン側／最終コーナー／センターハウス1Fロータリー」</td><td>2ページで表記を統一</td></tr>
+      <tr><td><span class="badge b-ok">整合OK</span></td><td class="loc">入場日 8/22(土)・23(日)、パドック不可 8/20(木)・21(金)</td><td>2026で正しい</td><td>修正不要</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 共通のみのページ -->
+<h2 class="sec">ページ固有の修正なし（＝共通の見出し年号のみ）</h2>
+<div class="card">
+  <p class="nofix">下記ページは内容・日付とも2026で整合しており、<strong>共通の「見出し年号 2025→2026」のみ</strong>が修正対象です（記事公開日のポリシーは別途）。</p>
+  <p class="note">
+    チケット販売について ／ 自由席・指定席・エリア席 ／ 車いす席 ／ S席ファミリーシート ／
+    VIPスイート・プレミアム ／ ホスピタリティラウンジ・プレミアム ／ ホスピタリティラウンジ ／
+    ホスピタリティクラブ ／ パノラマルーム ／ パノラマテラス ／ GRAN VIEW ／
+    ピットウォークパス ／ 観戦席座席表 ／ 各種チケット内容比較表
+  </p>
+</div>
+
+<footer>
+  HPチェック 修正点一覧（2026年版校正）｜基準：2026年カレンダー実測｜本資料は分析成果物です。
+</footer>
+
+</div>
+</body>
+</html>
