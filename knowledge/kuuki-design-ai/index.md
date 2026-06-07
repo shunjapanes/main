@@ -21,6 +21,15 @@
 | [airflow-app.md](./airflow-app.md) | AIRFLOW — 自社開発AIタスク管理アプリ |
 | [video-list.md](./video-list.md) | 動画・エピソード一覧（参照リンク） |
 
+### AIツール別ガイド（クウキデザイン流の当てはめ）
+
+| ファイル | 内容 |
+|---|---|
+| [tools/claude.md](./tools/claude.md) | Claude — 文脈エンジン・Projects・Skills |
+| [tools/claude-code.md](./tools/claude-code.md) | Claude Code — CLAUDE.md・AIRFLOW思想の実装 |
+| [tools/chatgpt.md](./tools/chatgpt.md) | ChatGPT — Custom Instructions・GPTs |
+| [tools/gemini.md](./tools/gemini.md) | Gemini — 長文脈・Workspace連携・Gems |
+
 ---
 
 ## Rioの立ち位置
