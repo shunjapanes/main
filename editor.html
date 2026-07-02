@@ -7877,13 +7877,6 @@
               .map(k => normHeaders.indexOf(k))
               .find(i => i !== -1);
             const grpKey = grpKeyIdx != null ? headers[grpKeyIdx] : null;
-            console.log("[SEJ] 仮想列追加チェック:", {
-              curCodeIdx,
-              masterHeaders: normHeaders,
-              grpKey,
-              hasExistingVirtual: !!state.sejVirtualCols,
-              dataRows: state.data.length,
-            });
             if (curCodeIdx !== -1 && grpKey && !state.sejVirtualCols) {
               const vIdx = state.headers.length;
               state.headers.push("グループ名");
@@ -7894,7 +7887,6 @@
               });
               state.sejVirtualCols = { indices: [vIdx], keys: [grpKey] };
               if (state.displayHeaders) state.displayHeaders.push("グループ名");
-              console.log("[SEJ] 仮想列追加完了 index=" + vIdx);
             } else if (!grpKey) {
               console.warn("[SEJ] マスタにグループ名列が見つかりません。利用可能な列:", normHeaders);
             } else if (state.sejVirtualCols) {
