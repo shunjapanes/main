@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="TSV Editor">
+  <rect width="128" height="128" rx="24" fill="#217346"/>
+  <rect x="24" y="28" width="80" height="72" rx="8" fill="#ffffff"/>
+  <path d="M24 48h80M24 68h80M24 88h80M48 28v72M80 28v72" stroke="#217346" stroke-width="6"/>
+</svg>
