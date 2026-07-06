@@ -5,8 +5,8 @@
 - 実行日時: 2026-07-06 16:08 UTC
 - プロジェクト: TSV/CSVエディタ (React 19 + TypeScript + Vite + Tailwind)
 - レビューファイル数: 9件 (editor.html, App.tsx, bridge.ts, RibbonToolbar.tsx, SearchBar.tsx, FileTabBar.tsx, StatusBar.tsx, sw.js, RibbonButton/Group.tsx)
-- 発見件数: 🔴 Critical 1 / 🟠 High 6 / 🟡 Medium 6 / 🟢 Low 4
-- うち新規 [NEW]: 8件 / 継続 [継続]: 9件
+- 発見件数: 🔴 Critical 1 / 🟠 High 6 / 🟡 Medium 6 / 🟢 Low 7
+- うち新規 [NEW]: 11件 / 継続 [継続]: 9件
 - 適用済み自動修正: **0件**（自動修正対象なし）
 - ⚠️ **Critical指摘が2ヶ月超継続未対応。今回、新規バグ（Ctrl+Shift+Z redo不動作）・CSS injection・CSP欠如タiframeサンドボックス欠如を新規検出。**
 
@@ -94,7 +94,7 @@
 **[NEW] Q-3: message ハンドラの型判別に `else if` が使われていない**
 - 場所: `client/src/App.tsx:72-93`
 - 重要度: **Low**
-- `msg.type` は判別共用体だが全条件を狜立した `if` で評価。マッチ後も全条件を評価し続ける不要な処理が発生する。
+- `msg.type` は判別共用体だが全条件を独立した `if` で評価。マッチ後も全条件を評価し続ける不要な処理が発生する。
 - **修正案:** `else if` チェーンまたは `switch` 文に変更する。
 
 ---
@@ -124,7 +124,25 @@
 - ファイル読み込み失敗時（権限エラー・破損ファイル等）に UI 側で何も通知されない。
 - **修正案:** `reader.onerror = () => { setStatus('ファイルの読み込みに失敗しました'); }` を追加。
 
-**[NEW] B-4: Service Worker のキャッシュバージョンが固定 → セキュリティ修正が既存ユーザーに届かない**
+**[NEW] B-4: SearchBar 初期マウント時に不要な `send('search', '')` が 180ms 後に送信される**
+- 場所: `client/src/components/SearchBar.tsx:27-33`
+- 重要度: **Low**
+- コンポーネントマウント時に debounce useEffect が `query = ''` で即実行され、180ms 後に `send('search', '')` を発行する。editor.html の初期化タイミング次第でディスパッチ設定前に届く場合があり、設定後でも `execSearch('')` が既存の検索状態を消去する副作用を持つ。
+- **修正案:** `isMounted` フラグで初回実行をスキップする。
+
+**[NEW] B-5: clearSearch が折り返し postMessage でデバウンスを二重発火させる**
+- 場所: `editor.html:9539` / `client/src/components/SearchBar.tsx:27-33`
+- 重要度: **Low**
+- 親が `send('clearSearch')` を送ると editor.html が折り返し `postMessage({ type: 'clearSearch' })` を送信し、App.tsx → SearchBar の `externalQuery` 変化 → `setQuery('')` → debounce → 180ms 後に `send('search', '')` が再送される。clearSearch 直後に `execSearch('')` が二重実行される。
+- **修正案:** editor.html の `clearSearch` dispatch で折り返し `postMessage` を送らない。または `{ type: 'clearSearch', fromParent: true }` で起点を区別し App.tsx 側でループを抑制。
+
+**[NEW] B-6: FileTabBar のタブに配列インデックスを key として使用**
+- 場所: `client/src/components/FileTabBar.tsx:19`
+- 重要度: **Low**
+- `tabs.map((tab, i) => <div key={i}>)` はインデックスをキーに使用。タブ削除時に React の差分アルゴリズムが誤ったノードを再利用し、フォーカス状態等にずれが生じる可能性がある。
+- **修正案:** `Tab` インターフェースに `id: string` を追加し editor.html 側で UUID を付与、`key={tab.id}` に変更する。
+
+**[NEW] B-7: Service Worker のキャッシュバージョンが固定 → セキュリティ修正が既存ユーザーに届かない**
 - 場所: `client/public/sw.js:1`
 - 重要度: **Low**
 - `CACHE = 'tsv-editor-v1'` が固定値のため、バージョン名を変更しないかぎり既存ユーザーに旧 `editor.html` が配信され続ける。セキュリティ脂弱性の修正をデプロイしても既存ユーザーには届かないリスク。
