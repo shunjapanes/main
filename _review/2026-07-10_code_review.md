@@ -5,10 +5,10 @@
 - 実行日時: 2026-07-10 UTC（自動レビュー）
 - プロジェクト: TSV/CSVエディタ (React 19 + TypeScript + Vite + Tailwind)
 - レビューファイル数: 8件 (App.tsx, bridge.ts, RibbonToolbar.tsx, SearchBar.tsx, FileTabBar.tsx, StatusBar.tsx, editor.html抜粋, client/package.json)
-- 発見件数: 🔴 Critical 1 / 🟠 High 7 / 🟡 Medium 11 / 🟢 Low 13
-- うち新規 [NEW]: 9件 / 継続 [継続]: 23件
+- 発見件数: 🔴 Critical 1 / 🟠 High 7 / 🟡 Medium 8 / 🟢 Low 16
+- うち新規 [NEW]: 8件 / 継続 [継続]: 24件 / 解消 [FIXED]: 1件 (B-8)
 - 適用済み自動修正: **0件**（対象コードなし）
-- ⚠️ **S-1 Critical は2026-07-02以降 18日間未対応。B-1（Ctrl+Shift+Z redo不動作）も継続中。今週の新規発見: editor.html 側の origin 未検証(S-12)、window.open noopener 欠如(S-13)、location.href 漏洩(S-14) ほか品質系3件・バグ1件。**
+- ⚠️ **S-1 Critical は2026-07-02以降 18日間未対応。B-1（Ctrl+Shift+Z redo不動作）も継続中。今週の新規発見: editor.html 側の origin 未検証(S-12)、window.open noopener 欠如(S-13)、location.href 漏洩(S-14) ほか品質系3件・バグ2件。前回指摘 B-8（gotoRow 上限チェック）は editor.html 側で修正済みと確認。**
 
 ---
 
@@ -159,19 +159,30 @@
 - 場所: `client/public/sw.js:1` — `CACHE = 'tsv-editor-v1'`
 - **修正案:** ビルド時コンテンツハッシュで自動インクリメント。
 
-**[継続] B-8: gotoRow に行番号の上限値チェックなし**
-- 場所: `client/src/components/SearchBar.tsx` — `doGotoRow()`
-- **修正案:** `const num = Math.min(parseInt(rowNum, 10), MAX_ROWS_LIMIT); if (!isNaN(num)) send('gotoRow', num);`
+**[FIXED] B-8: gotoRow の行番号上限・下限チェック — 解消確認**
+- 場所: `editor.html:7411,7415-7418`
+- `n < 1` の下限チェックおよび `n > state.data.length` の上限チェックが実装済みであることを確認。本 finding は解消済み。
 
 **[継続] B-9: Enter キー後の `searchNext/Prev` を 30ms 固定遅延で送信するレース条件**
 - 場所: `client/src/components/SearchBar.tsx` — Enter キーハンドラ
 - 30ms はエディタ側の検索インデックス確定を保証しない。大きな CSV でナビゲーションが「ヒットなし」と誤判定される。
 - **修正案:** `searchReady` 応答を受け取ってから `searchNext/Prev` を送信するコールバック方式に変更。
 
-**[NEW] B-10: `gotoRow` に文字列型 (`string`) を postMessage 送信（parseInt 欠如）**
-- 場所: `client/src/components/SearchBar.tsx` — `const doGotoRow = () => { if (rowNum) send('gotoRow', rowNum) }`
-- `rowNum` は `useState<string>('')` で文字列型のまま送信される。エディタ側が数値を期待している場合、エッジケースで数値比較が誤動作する可能性がある。B-8 の上限チェックとは別の型安全性問題。
-- **修正案:** `send('gotoRow', parseInt(rowNum, 10))` に変更（B-8 修正と合わせて適用）。
+**[NEW] B-10: Service Worker の `respondWith` がオフライン+キャッシュ未ヒット時に `undefined` に解決**
+- 場所: `client/public/sw.js:12-16`
+  ```js
+  cached || fetch(e.request).then(resp => {
+    if (resp.ok) cache.put(e.request, resp.clone());
+    return resp;
+  }).catch(() => cached)  // cached は undefined
+  ```
+- キャッシュヒットなし+ネットワーク失敗時、`.catch(() => cached)` が `undefined` を返す。SW 仕様では `respondWith(undefined)` は `TypeError` を発生させコンソールエラーになる。オフライン時のフォールバックが機能しない。
+- **修正案:** `.catch(() => cached || new Response('Offline', { status: 503 }))` とする。
+
+**[NEW] B-11: App.tsx の message ハンドラが `e.source` を未検証（e.origin チェック(S-8)と異なる攻撃経路）**
+- 場所: `client/src/App.tsx` — message イベントハンドラ
+- editor.html 側は `if (e.source !== window.parent) return` でソース検証しているが、親フレーム(App.tsx)は `e.source` も `e.origin` も未検証。ページ上の別スクリプトや意図せず追加された iframe が `{ type: 'tabs', tabs: [] }` 等を送信してUI状態を書き換えられる。
+- **修正案:** `if (e.source !== document.getElementById('editor-frame')?.contentWindow) return` を S-8 の origin チェックと合わせて追加。
 
 ---
 
@@ -211,14 +222,15 @@ TypeScript ソースファイル (App.tsx, bridge.ts, SearchBar.tsx, RibbonToolb
 8. **🟡 今週中** — **S-13**: `window.open` に `"noopener,noreferrer"` 追加（2箇所）[NEW]
 9. **🟡 今週中** — **S-10**: CSP ヘッダーを追加
 10. **🟡 今週中** — **B-3**: `reader.onerror` ハンドラを追加
-11. **🟡 今週中** — **B-8 + B-10**: `gotoRow` の `parseInt` + 上限チェックを追加（2問同時解決）
-12. **🟡 今週中** — **B-9**: searchNext/Prev の 30ms 固定遅延を応答駆動コールバックに変更
-13. **🟡 今週中** — **S-14**: デバッグメモから `location.href` クエリパラメータを除外 [NEW]
-14. **🟢 余裕時** — **Q-6**: `FileReader.result` の型アサーションを型ガードに変更 [NEW]
-15. **🟢 余裕時** — **Q-7**: SearchBar のデバウンス実装を標準パターンに簡略化 [NEW]
-16. **🟢 余裕時** — **Q-8**: `send()` の `action` 引数を union 型で型付け [NEW]
-17. **🟢 余裕時** — **Q-4 + Q-5**: externalQuery 同期と `unescape()` の改修
-18. **🟢 余裕時** — **B-6**: FileTabBar の `key={i}` を安定IDに変更
+11. **🟡 今週中** — **B-9**: searchNext/Prev の 30ms 固定遅延を応答駆動コールバックに変更
+12. **🟡 今週中** — **S-14**: デバッグメモから `location.href` クエリパラメータを除外 [NEW]
+13. **🟢 余裕時** — **B-10**: SW の offline フォールバックを `Response('Offline', {status:503})` に変更 [NEW]
+14. **🟢 余裕時** — **B-11**: App.tsx message handler に `e.source` チェック追加（S-8 と同時適用） [NEW]
+15. **🟢 余裕時** — **Q-6**: `FileReader.result` の型アサーションを型ガードに変更 [NEW]
+16. **🟢 余裕時** — **Q-7**: SearchBar のデバウンス実装を標準パターンに簡略化 [NEW]
+17. **🟢 余裕時** — **Q-8**: `send()` の `action` 引数を union 型で型付け [NEW]
+18. **🟢 余裕時** — **Q-4 + Q-5**: externalQuery 同期と `unescape()` の改修
+19. **🟢 余裕時** — **B-6**: FileTabBar の `key={i}` を安定IDに変更
 
 ---
 
