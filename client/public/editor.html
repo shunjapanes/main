@@ -2057,7 +2057,7 @@
             </button>
           </div>
           <div style="font-size:10px;color:var(--text-dim);margin-top:3px">
-            localStorageに保存されます。必要最小限スコープ: <code>public_repo</code>
+            このタブを開いている間のみ保存されます（閉じると再入力が必要）。必要最小限スコープ: <code>public_repo</code>
           </div>
         </div>
 
@@ -9055,10 +9055,10 @@
 
       // PAT helpers
       function dbmGetPat() {
-        try { return atob(localStorage.getItem(DEBUG_MEMO_PAT_KEY) || ""); } catch { return ""; }
+        return sessionStorage.getItem(DEBUG_MEMO_PAT_KEY) || "";
       }
       function dbmSavePat(pat) {
-        localStorage.setItem(DEBUG_MEMO_PAT_KEY, btoa(pat));
+        sessionStorage.setItem(DEBUG_MEMO_PAT_KEY, pat);
       }
       function dbmGetRepo() {
         return localStorage.getItem(DEBUG_MEMO_REPO_KEY) || "shunjapanes/main";
