@@ -65,7 +65,7 @@ export default function App() {
       if (tag === 'IFRAME') return  // iframe自身がフォーカスを持つ場合は不要
       if (cmd && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
         e.preventDefault(); send('undo')
-      } else if (cmd && ((e.key === 'z' && e.shiftKey) || e.key === 'y' || e.key === 'Y')) {
+      } else if (cmd && ((e.key === 'Z' && e.shiftKey) || e.key === 'y' || e.key === 'Y')) {
         e.preventDefault(); send('redo')
       }
     }
