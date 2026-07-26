@@ -4,36 +4,7 @@ import SearchBar from './components/SearchBar'
 import FileTabBar from './components/FileTabBar'
 import StatusBar from './components/StatusBar'
 import { send, focusEditor } from './lib/bridge'
-
-interface Tab {
-  name: string
-  dirty: boolean
-}
-
-export interface ToggleStates {
-  filterActive: boolean
-  wrapActive: boolean
-  verticalHeaderActive: boolean
-  condHLActive: boolean
-  fitTextActive: boolean
-  freezeActive: boolean
-}
-
-interface EditorMessage {
-  type: 'status' | 'tabs' | 'position' | 'stats' | 'searchCount' | 'clearSearch' | 'focusSearch' | 'stateSync'
-  text?: string
-  tabs?: Tab[]
-  activeTab?: number
-  position?: string
-  stats?: string
-  count?: string
-  filterActive?: boolean
-  wrapActive?: boolean
-  verticalHeaderActive?: boolean
-  condHLActive?: boolean
-  fitTextActive?: boolean
-  freezeActive?: boolean
-}
+import type { FileTab, ToggleStates, EditorMessage } from './types'
 
 const DEFAULT_TOGGLES: ToggleStates = {
   filterActive: false,
@@ -44,11 +15,41 @@ const DEFAULT_TOGGLES: ToggleStates = {
   freezeActive: false,
 }
 
+const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
+
+function decodeFileContent(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer)
+  if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
+    return new TextDecoder('utf-8').decode(bytes.subarray(3))
+  }
+  if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) {
+    return new TextDecoder('utf-16le').decode(bytes.subarray(2))
+  }
+  if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) {
+    return new TextDecoder('utf-16be').decode(bytes.subarray(2))
+  }
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+  } catch {
+    // not valid UTF-8 — fall through to legacy Japanese encodings
+  }
+  try {
+    return new TextDecoder('shift_jis', { fatal: true }).decode(bytes)
+  } catch {
+    // fall through
+  }
+  try {
+    return new TextDecoder('euc-jp', { fatal: true }).decode(bytes)
+  } catch {
+    return new TextDecoder('utf-8').decode(bytes) // last resort, lossy
+  }
+}
+
 export default function App() {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [status, setStatus] = useState('準備完了')
-  const [tabs, setTabs] = useState<Tab[]>([])
+  const [tabs, setTabs] = useState<FileTab[]>([])
   const [activeTab, setActiveTab] = useState(0)
   const [position, setPosition] = useState('')
   const [stats, setStats] = useState('')
@@ -62,10 +63,12 @@ export default function App() {
       const cmd = e.ctrlKey || e.metaKey
       if (!cmd) return
       const tag = (document.activeElement as HTMLElement)?.tagName
-      if (tag === 'IFRAME') return  // iframe自身がフォーカスを持つ場合は不要
-      if (cmd && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
-        e.preventDefault(); send('undo')
-      } else if (cmd && ((e.key === 'Z' && e.shiftKey) || e.key === 'y' || e.key === 'Y')) {
+      // iframe自身・検索/行入力欄にフォーカスがある場合はブラウザ標準の undo/redo に任せる
+      if (tag === 'IFRAME' || tag === 'INPUT' || tag === 'TEXTAREA') return
+      if (e.key === 'z' || e.key === 'Z') {
+        e.preventDefault()
+        send(e.shiftKey ? 'redo' : 'undo')
+      } else if (e.key === 'y' || e.key === 'Y') {
         e.preventDefault(); send('redo')
       }
     }
@@ -75,27 +78,43 @@ export default function App() {
 
   useEffect(() => {
     const handler = (e: MessageEvent<EditorMessage>) => {
+      if (e.origin !== window.location.origin) return
       if (!e.data || typeof e.data !== 'object') return
       const msg = e.data
-      if (msg.type === 'status' && msg.text !== undefined) setStatus(msg.text)
-      if (msg.type === 'tabs' && msg.tabs !== undefined) {
-        setTabs(msg.tabs)
-        if (msg.activeTab !== undefined) setActiveTab(msg.activeTab)
-      }
-      if (msg.type === 'position' && msg.position !== undefined) setPosition(msg.position)
-      if (msg.type === 'stats' && msg.stats !== undefined) setStats(msg.stats)
-      if (msg.type === 'searchCount' && msg.count !== undefined) setSearchCount(msg.count)
-      if (msg.type === 'clearSearch') { setSearchQuery(''); setSearchCount('') }
-      if (msg.type === 'focusSearch') searchInputRef.current?.focus()
-      if (msg.type === 'stateSync') {
-        setToggles({
-          filterActive: !!(msg.filterActive),
-          wrapActive: !!(msg.wrapActive),
-          verticalHeaderActive: !!(msg.verticalHeaderActive),
-          condHLActive: !!(msg.condHLActive),
-          fitTextActive: !!(msg.fitTextActive),
-          freezeActive: !!(msg.freezeActive),
-        })
+      switch (msg.type) {
+        case 'status':
+          setStatus(msg.text)
+          break
+        case 'tabs':
+          setTabs(msg.tabs)
+          if (msg.activeTab !== undefined) setActiveTab(msg.activeTab)
+          break
+        case 'position':
+          setPosition(msg.position)
+          break
+        case 'stats':
+          setStats(msg.stats)
+          break
+        case 'searchCount':
+          setSearchCount(msg.count)
+          break
+        case 'clearSearch':
+          setSearchQuery('')
+          setSearchCount('')
+          break
+        case 'focusSearch':
+          searchInputRef.current?.focus()
+          break
+        case 'stateSync':
+          setToggles({
+            filterActive: msg.filterActive,
+            wrapActive: msg.wrapActive,
+            verticalHeaderActive: msg.verticalHeaderActive,
+            condHLActive: msg.condHLActive,
+            fitTextActive: msg.fitTextActive,
+            freezeActive: msg.freezeActive,
+          })
+          break
       }
     }
     window.addEventListener('message', handler)
@@ -105,12 +124,22 @@ export default function App() {
   const handleFileSelected = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    if (file.size > MAX_FILE_SIZE) {
+      setStatus('ファイルが大きすぎます (上限100MB)')
+      e.target.value = ''
+      return
+    }
     const reader = new FileReader()
     reader.onload = (ev) => {
-      const content = ev.target?.result as string
-      if (content != null) { send('openContent', { content, filename: file.name }); focusEditor() }
+      const result = ev.target?.result
+      if (!(result instanceof ArrayBuffer)) return
+      const content = decodeFileContent(result)
+      const filename = file.name.replace(/[<>&"']/g, '_')
+      send('openContent', { content, filename })
+      focusEditor()
     }
-    reader.readAsText(file)
+    reader.onerror = () => setStatus('ファイル読み込みエラー')
+    reader.readAsArrayBuffer(file)
     e.target.value = ''
   }, [])
 
@@ -143,7 +172,8 @@ export default function App() {
         src={`${import.meta.env.BASE_URL}editor.html`}
         className="flex-1 w-full border-none"
         title="TSV/CSV エディタ"
-        allow="clipboard-read; clipboard-write; popups"
+        sandbox="allow-scripts allow-same-origin allow-downloads allow-popups allow-modals"
+        allow="clipboard-read; clipboard-write"
       />
       <FileTabBar tabs={tabs} activeTab={activeTab} />
       <StatusBar status={status} position={position} stats={stats} />

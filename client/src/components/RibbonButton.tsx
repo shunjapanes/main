@@ -7,15 +7,11 @@ interface Props {
   onClick: () => void
   disabled?: boolean
   active?: boolean
-  size?: 'normal' | 'large'
   title?: string
 }
 
-export default function RibbonButton({ icon: Icon, label, onClick, disabled, active, size = 'normal', title }: Props) {
-  const base = 'flex flex-col items-center justify-center gap-0.5 rounded cursor-pointer select-none transition-colors'
-  const sizeClass = size === 'large'
-    ? 'min-w-[60px] max-w-[76px] h-full px-1'
-    : 'min-w-[48px] max-w-[68px] h-full px-1'
+export default function RibbonButton({ icon: Icon, label, onClick, disabled, active, title }: Props) {
+  const base = 'flex flex-col items-center justify-center gap-0.5 rounded cursor-pointer select-none transition-colors min-w-[48px] max-w-[68px] h-full px-1'
   const stateClass = disabled
     ? 'opacity-40 cursor-not-allowed'
     : active
@@ -24,13 +20,13 @@ export default function RibbonButton({ icon: Icon, label, onClick, disabled, act
 
   return (
     <button
-      className={`${base} ${sizeClass} ${stateClass}`}
-      onClick={disabled ? undefined : () => { onClick(); focusEditor() }}
+      className={`${base} ${stateClass}`}
+      onClick={() => { onClick(); focusEditor() }}
       title={title ?? label}
       aria-label={label}
       disabled={disabled}
     >
-      <Icon size={size === 'large' ? 22 : 18} strokeWidth={1.5} className="flex-shrink-0" />
+      <Icon size={18} strokeWidth={1.5} className="flex-shrink-0" />
       <span className="text-[9px] leading-tight text-center break-all line-clamp-2 w-full">
         {label}
       </span>
