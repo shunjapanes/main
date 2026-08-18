@@ -7787,7 +7787,8 @@
           html = html.replace(/&lt;a\s+href\s*=\s*(?:&quot;([^&]*)&quot;|([^\s&>]+))(?:\s[^&]*?)?&gt;(.*?)&lt;\/a&gt;/gi,
             (_, q, nq, text) => {
               const url = q || nq || "";
-              return `<a href="${escHtml(url)}" target="_blank" style="color:#2563eb;text-decoration:underline">${text}</a>`;
+              if (!/^https?:\/\//i.test(url)) return escHtml(text);
+              return `<a href="${escHtml(url)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline">${text}</a>`;
             });
           // <font color="red">...</font> → 赤字表示
           html = html.replace(/&lt;font\s+color\s*=\s*(?:&quot;([^&]*)&quot;|([^\s&>]+))\s*&gt;/gi,
@@ -9502,7 +9503,7 @@
           'toggleFitText':   function() { toggleFitText(); _ribSyncToggles(); },
           'toggleCondHL':    function() { toggleConditionalHL(); _ribSyncToggles(); },
           'dupHighlight':    function() { openDupHlDialog(); },
-          'resetView':       function() { resetView(); window.parent.postMessage({ type: 'clearSearch' }, '*'); _ribSyncToggles(); },
+          'resetView':       function() { resetView(); window.parent.postMessage({ type: 'clearSearch' }, location.origin); _ribSyncToggles(); },
           'loadSejMaster':   function() {
             var inp = document.createElement('input');
             inp.type = 'file'; inp.accept = '.tsv,.txt,text/plain';
@@ -9536,7 +9537,7 @@
           },
           'searchNext':      function() { moveSearch(1); },
           'searchPrev':      function() { moveSearch(-1); },
-          'clearSearch':     function() { els.search.value = ''; execSearch(); window.parent.postMessage({ type: 'clearSearch' }, '*'); },
+          'clearSearch':     function() { els.search.value = ''; execSearch(); window.parent.postMessage({ type: 'clearSearch' }, location.origin); },
           'replaceOne':      function() {
             var repFind = document.getElementById('replace-find');
             var repWith = document.getElementById('replace-with');
@@ -9586,7 +9587,7 @@
           new MutationObserver(function() {
             var txt = statusEl.textContent || '';
             if (txt === 'Ready') txt = '準備完了';
-            window.parent.postMessage({ type: 'status', text: txt }, '*');
+            window.parent.postMessage({ type: 'status', text: txt }, location.origin);
           }).observe(statusEl, { childList: true, subtree: true, characterData: true });
         }
       })();
@@ -9596,7 +9597,7 @@
         var countEl = document.getElementById('search-count');
         if (countEl) {
           new MutationObserver(function() {
-            window.parent.postMessage({ type: 'searchCount', count: countEl.textContent || '' }, '*');
+            window.parent.postMessage({ type: 'searchCount', count: countEl.textContent || '' }, location.origin);
           }).observe(countEl, { childList: true, subtree: true, characterData: true });
         }
       })();
@@ -9606,13 +9607,13 @@
         var posEl = document.getElementById('status-pos');
         if (posEl) {
           new MutationObserver(function() {
-            window.parent.postMessage({ type: 'position', position: posEl.textContent || '' }, '*');
+            window.parent.postMessage({ type: 'position', position: posEl.textContent || '' }, location.origin);
           }).observe(posEl, { childList: true, subtree: true, characterData: true });
         }
         var statsEl = document.getElementById('status-stats');
         if (statsEl) {
           new MutationObserver(function() {
-            window.parent.postMessage({ type: 'stats', stats: statsEl.textContent || '' }, '*');
+            window.parent.postMessage({ type: 'stats', stats: statsEl.textContent || '' }, location.origin);
           }).observe(statsEl, { childList: true, subtree: true, characterData: true });
         }
       })();
@@ -9623,7 +9624,7 @@
         var tabData = state.tabs.map(function(t) {
           return { name: t.fileName || t.name || 'Sheet', dirty: !!t.dirty };
         });
-        window.parent.postMessage({ type: 'tabs', tabs: tabData, activeTab: state.activeTab }, '*');
+        window.parent.postMessage({ type: 'tabs', tabs: tabData, activeTab: state.activeTab }, location.origin);
       }
       function _ribSyncToggles() {
         if (typeof state === 'undefined') return;
@@ -9635,7 +9636,7 @@
           condHLActive: !!(state.conditionalHL),
           fitTextActive: !!(state.fitText),
           freezeActive: !!(state.freezeCols > 0),
-        }, '*');
+        }, location.origin);
       }
       (function() {
         var tabBar = document.getElementById('tab-bar');
@@ -9650,7 +9651,7 @@
         if (cmd && !e.shiftKey && !e.altKey && (e.key === 'f' || e.key === 'F')) {
           e.preventDefault();
           e.stopPropagation();
-          window.parent.postMessage({ type: 'focusSearch' }, '*');
+          window.parent.postMessage({ type: 'focusSearch' }, location.origin);
         }
       }, true);
 
