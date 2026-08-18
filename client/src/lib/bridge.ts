@@ -1,6 +1,6 @@
 export function send(action: string, payload?: unknown): void {
   const iframe = document.getElementById('editor-frame') as HTMLIFrameElement | null
-  iframe?.contentWindow?.postMessage({ action, payload }, '*')
+  iframe?.contentWindow?.postMessage({ action, payload }, window.location.origin)
 }
 
 export function focusEditor(): void {

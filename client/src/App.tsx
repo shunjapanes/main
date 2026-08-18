@@ -75,6 +75,7 @@ export default function App() {
 
   useEffect(() => {
     const handler = (e: MessageEvent<EditorMessage>) => {
+      if (e.origin !== window.location.origin) return
       if (!e.data || typeof e.data !== 'object') return
       const msg = e.data
       if (msg.type === 'status' && msg.text !== undefined) setStatus(msg.text)
