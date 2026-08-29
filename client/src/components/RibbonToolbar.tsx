@@ -11,10 +11,10 @@ import {
 import RibbonGroup from './RibbonGroup'
 import RibbonButton from './RibbonButton'
 import { send } from '../lib/bridge'
-import type { ToggleStates } from '../App'
+import type { ToggleStates } from '../types'
 
 const TABS = ['ファイル', 'ホーム', 'データ', '表示', 'ツール'] as const
-type Tab = typeof TABS[number]
+type RibbonTabName = typeof TABS[number]
 
 interface Props {
   onFocusSearch?: () => void
@@ -23,7 +23,7 @@ interface Props {
 }
 
 export default function RibbonToolbar({ onFocusSearch, onOpenFile, toggleStates }: Props) {
-  const [activeTab, setActiveTab] = useState<Tab>('ホーム')
+  const [activeTab, setActiveTab] = useState<RibbonTabName>('ホーム')
 
   return (
     <div className="flex flex-col bg-[#f3f2f1] border-b border-gray-300 select-none" style={{ flexShrink: 0 }}>
@@ -65,7 +65,7 @@ function FileTab({ onOpenFile }: { onOpenFile?: () => void }) {
     <>
       <RibbonGroup label="新規・開く">
         <RibbonButton icon={FilePlus} label="新規" onClick={() => send('new')} />
-        <RibbonButton icon={FolderOpen} label="開く" onClick={() => onOpenFile ? onOpenFile() : send('open')} />
+        <RibbonButton icon={FolderOpen} label="開く" onClick={() => onOpenFile?.()} />
         <RibbonButton icon={PlusSquare} label="シート追加" onClick={() => send('addSheet')} />
       </RibbonGroup>
       <Divider />
@@ -192,10 +192,14 @@ function ToolsTab() {
       <RibbonGroup label="分析">
         <RibbonButton icon={BarChart2} label="列統計" onClick={() => send('colStats')} title="選択列の統計情報を表示" />
       </RibbonGroup>
-      <Divider />
-      <RibbonGroup label="デバッグ">
-        <RibbonButton icon={Bug} label="メモ" onClick={() => send('debugMemo')} title="デバッグメモをGitHubに送信" />
-      </RibbonGroup>
+      {import.meta.env.DEV && (
+        <>
+          <Divider />
+          <RibbonGroup label="デバッグ">
+            <RibbonButton icon={Bug} label="メモ" onClick={() => send('debugMemo')} title="デバッグメモをGitHubに送信" />
+          </RibbonGroup>
+        </>
+      )}
       <Divider />
       <RibbonGroup label="設定・ヘルプ">
         <RibbonButton icon={BookOpen} label="ヘッダー辞書" onClick={() => send('dictEditor')} title="ヘッダー辞書エディタを開く" />
