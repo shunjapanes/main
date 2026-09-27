@@ -1869,6 +1869,21 @@
         >
           ファイルを選択
         </button>
+        <button
+          type="button"
+          class="btn"
+          id="btn-drop-blank"
+          style="
+            display: none;
+            margin-top: 4px;
+            height: 28px;
+            padding: 0 12px;
+            font-size: 12px;
+          "
+          aria-label="空のシートのまま編集を始める"
+        >
+          空のシートで編集
+        </button>
       </div>
       <div id="table-container">
         <table
@@ -2431,6 +2446,19 @@
           cap.textContent = `${state.fileName || "TSV/CSV"} データ編集グリッド`;
       }
 
+      // 未編集の空白シート（シート追加直後）はファイル読込画面を表示する
+      function showActiveSheet() {
+        const cur = state.tabs[state.activeTab];
+        if (cur && cur._isBlankSheet === true && !cur.dirty && !cur._showGrid) {
+          els.dropZone.classList.remove("hidden");
+          els.container.style.display = "none";
+          $("btn-drop-blank").style.display = "";
+          return;
+        }
+        $("btn-drop-blank").style.display = "none";
+        showTable();
+      }
+
       // ===== タブ管理 =====
       function saveCurrentTab() {
         if (state.activeTab < 0 || !state.tabs.length) return;
@@ -2574,7 +2602,7 @@
         renderHeader();
         state.forceRender = true;
         renderBody();
-        showTable();
+        showActiveSheet();
       }
 
       function closeTab(idx) {
@@ -2607,6 +2635,7 @@
           $("tab-bar").style.display = "none";
           els.dropZone.classList.remove("hidden");
           els.container.style.display = "none";
+          $("btn-drop-blank").style.display = "none";
           return;
         }
         const newIdx = Math.min(idx, state.tabs.length - 1);
@@ -2765,6 +2794,11 @@
           else doOpen();
         };
         $("btn-drop-open").onclick = () => els.fileInput.click();
+        $("btn-drop-blank").onclick = () => {
+          const cur = state.tabs[state.activeTab];
+          if (cur) cur._showGrid = true;
+          showActiveSheet();
+        };
         $("btn-save").onclick = saveFile;
         $("btn-undo").onclick = undo;
         $("btn-redo").onclick = redo;
@@ -5012,6 +5046,14 @@
 
         const { key, ctrlKey, metaKey, shiftKey } = e;
 
+        // 空白シートでファイル読込画面を表示中は非表示のグリッドを操作しない
+        if (
+          state.tabs.length &&
+          els.container.style.display !== "block" &&
+          key !== "?"
+        )
+          return;
+
         if (cmd && key === "s") {
           e.preventDefault();
           saveFile();
@@ -6432,10 +6474,6 @@
                   toggleFreezeColumn();
                 },
               },
-              {
-                label: `「${getDisplayHeader(col)}」の統計情報`,
-                action: () => showColStats(col),
-              },
               { sep: true },
               {
                 label: (() => {
@@ -6785,7 +6823,7 @@
         renderHeader();
         state.forceRender = true;
         renderBody();
-        showTable();
+        showActiveSheet();
         markClean();
         setStatus(`新しいシート「${state.fileName}」を作成しました`);
       }
