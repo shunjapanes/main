@@ -5717,8 +5717,66 @@
         setStatus("選択範囲全体にペーストしました");
       }
 
+      // 中身が空のシート（＋で作った直後・全セル空）か。
+      // ここへ表を丸ごと貼るのは「ファイルを開く」のと同じ意味なので、1行目をヘッダーにする。
+      function isEmptySheetForPaste() {
+        if (state.activeTab < 0 || !state.tabs[state.activeTab]) return false;
+        if (state.data.length > 1) return false;
+        if (!state.data.every((r) => r.every((c) => (c ?? "") === ""))) return false;
+        // 読み込んだファイルの見出しが残っている空表は対象外（＋で作った「列1…」「1…」だけ）
+        return state.headers.every((h, i) => h === "列" + (i + 1) || h === String(i + 1));
+      }
+      // 空のシートへ貼った表を、1行目をヘッダーにして読み込む。
+      // ファイルを開いたときと同じくヘッダー辞書の日本語変換・不要列クリアが効く。
+      // 以前は通常のセル貼り付けになり、見出し行がデータ1行目に入ってヘッダーは
+      // 「列1」「列2」…のまま＝自動ヘッダー変換されなかった。
+      function pasteIntoEmptySheet(data2d) {
+        const cols = Math.max(...data2d.map((r) => r.length));
+        const rows = data2d.map((r) => {
+          const a = r.map((v) => String(v ?? ""));
+          while (a.length < cols) a.push("");
+          return a;
+        });
+        state.headerMode = "firstRow";
+        state.headers = rows[0];
+        state.data = rows.length > 1 ? rows.slice(1) : [Array(cols).fill("")];
+        state.colWidths = {};
+        state.cellColors = {};
+        state.hiddenRows = new Set();
+        state.hiddenCols = new Set();
+        state.wrapRows.clear();
+        state.columnFilters = {};
+        state.filteredIndices = null;
+        state.sortCol = -1;
+        state.sortKeys = [];
+        state.undoStack = [];
+        state.redoStack = [];
+        state.selected = { row: 0, col: 0 };
+        state.anchor = { row: 0, col: 0 };
+        state.range = null;
+        state._dupSet = null;
+        _visibleRowsCache = null;
+        clearAutoDropColumns();
+        applyHeaderMapping();
+        updateHeaderModeBtn();
+        // 貼り付けた内容はまだどこにも保存されていないので未保存扱いにする
+        markDirty();
+        autoFitAllColumnsQuiet();
+        renderHeader();
+        state.forceRender = true;
+        renderBody();
+        showTable();
+        setStatus(
+          `貼り付けた表を読み込みました: ${state.data.length}行 × ${state.headers.length}列（1行目をヘッダーに設定` +
+            (state.headerMapped ? "・ヘッダーを日本語表示に変換" : "") +
+            "）。見出し行が無いデータなら［H:1行目］で連番ヘッダーに戻せます",
+        );
+      }
+
       async function pasteFromClipboard() {
-        if (!state.selected) return;
+        const emptySheet = isEmptySheetForPaste();
+        // 空のシートはセル未選択でも貼り付けられるようにする（＋直後は何も選ばれていない）
+        if (!state.selected && !emptySheet) return;
         let cb;
         try {
           const txt = await navigator.clipboard.readText();
@@ -5726,12 +5784,21 @@
           const delim = txt.includes("\t") ? "\t" : txt.includes(",") ? "," : "\t";
           const data2d = parseDelimited(txt, delim);
           if (!data2d.length) return;
+          // 見出し＋データの2行以上を空のシートへ貼る → 1行目をヘッダーにして読み込む
+          if (emptySheet && data2d.length >= 2) {
+            pasteIntoEmptySheet(data2d);
+            return;
+          }
           cb = { data2d, rows: data2d.length, cols: Math.max(...data2d.map(r => r.length)) };
           state.clipboard = cb;
         } catch {
           if (state.clipboard) {
             cb = state.clipboard;
           } else { setStatus("ペースト失敗"); return; }
+        }
+        if (!state.selected) {
+          state.selected = { row: 0, col: 0 };
+          state.anchor = { row: 0, col: 0 };
         }
         const pasteR = state.range ? Math.min(state.range.r1, state.range.r2) : state.selected.row;
         const pasteC = state.range ? Math.min(state.range.c1, state.range.c2) : state.selected.col;
