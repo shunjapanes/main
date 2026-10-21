@@ -13,28 +13,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install & Build
-        run: |
-          cd client
-          npm ci
-          npm run build
-
+      # 公開するのは GAS版と同じ1枚完結の index.html（HPチェックを外したもの）。
+      # 旧URL（editor.html）で開いても同じ画面になるよう、同じファイルを2つの名前で置く。
       - name: Deploy to gh-pages
         run: |
-          cp client/dist/index.html /tmp/index.html
-          cp -r client/dist/assets /tmp/assets
-          cp client/public/editor.html /tmp/editor.html
+          cp index.html /tmp/index.html
+          cp client/public/sw.js /tmp/sw.js
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin gh-pages
           git checkout gh-pages
-          cp /tmp/index.html .
-          cp -r /tmp/assets .
-          cp /tmp/editor.html .
-          git add index.html assets editor.html
+          cp /tmp/index.html index.html
+          cp /tmp/index.html editor.html
+          cp /tmp/sw.js sw.js
+          git add index.html editor.html sw.js
           git diff --staged --quiet || git commit -m "deploy: auto-build from main"
           git push origin gh-pages
