@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Executive Morning Brief</title>
+<!-- 画面設計用の見本。数値・銘柄・案件はすべて架空。実データを入れないこと。 -->
+<base target="_top">
+<style>
+  :root {
+    --navy-900: #0B1F3A;
+    --navy-800: #12294B;
+    --blue-600: #1E5BD8;
+    --blue-400: #3B82F6;
+    --bg: #F3F6FB;
+    --card: #FFFFFF;
+    --text: #13213A;
+    --muted: #5B6B85;
+    --line: #DCE3EE;
+    --up: #0E8A5F;
+    --down: #C2352B;
+    --warn: #B7791F;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #08162B; --card: #0F2342; --text: #E6EDF7; --muted: #9DB0CC; --line: #22406B;
+      --up: #34C38F; --down: #FF6B5E; --warn: #F2B544;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #08162B; --card: #0F2342; --text: #E6EDF7; --muted: #9DB0CC; --line: #22406B;
+    --up: #34C38F; --down: #FF6B5E; --warn: #F2B544;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif;
+    padding-bottom: 72px;
+  }
+  a { color: var(--blue-400); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* 見出し帯 */
+  header {
+    background: linear-gradient(160deg, var(--navy-900), var(--navy-800) 60%, var(--blue-600));
+    color: #fff; padding: 20px 16px 18px;
+  }
+  .masthead { max-width: 760px; margin: 0 auto; }
+  .brand { font-family: Georgia, "Times New Roman", serif; font-size: 26px; letter-spacing: .02em; margin: 0; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; opacity: .9; margin-top: 4px; }
+  .status { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px;
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25);
+    padding: 6px 10px; border-radius: 999px; font-size: 13px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #F2B544; }
+  .daynav { display: flex; gap: 8px; margin-top: 12px; }
+  .daynav a { color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 8px;
+    padding: 8px 12px; min-height: 44px; display: inline-flex; align-items: center; font-size: 14px; }
+
+  main { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 16px; margin: 16px 0; scroll-margin-top: 12px; }
+  h2 { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--blue-400);
+    margin: 0 0 10px; display: flex; justify-content: space-between; align-items: baseline; }
+  h2 small { font-size: 12px; letter-spacing: 0; text-transform: none; color: var(--muted); font-weight: 400; }
+  h3 { font-size: 17px; margin: 0 0 2px; line-height: 1.45; }
+  .src { font-size: 12px; color: var(--muted); }
+
+  /* 1. Summary */
+  .top3 { list-style: none; margin: 0; padding: 0; }
+  .top3 li { padding: 12px 0; border-top: 1px solid var(--line); }
+  .top3 li:first-child { border-top: 0; padding-top: 0; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+    margin-right: 6px; vertical-align: 2px; color: #fff; }
+  .tag.act { background: var(--down); } .tag.watch { background: var(--blue-600); } .tag.done { background: var(--up); }
+
+  /* 2. Market */
+  .indices { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+  @media (min-width: 600px) { .indices { grid-template-columns: repeat(4, minmax(0,1fr)); } }
+  .idx { border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+  .idx .k { font-size: 12px; color: var(--muted); }
+  .idx .v { font-size: 18px; font-weight: 700; }
+  .up { color: var(--up); } .down { color: var(--down); }
+  .pf-head { display: flex; justify-content: space-between; align-items: center; margin: 16px 0 6px; gap: 8px; }
+  .pf-total { font-size: 22px; font-weight: 700; }
+  button.mask { border: 1px solid var(--line); background: transparent; color: var(--text);
+    border-radius: 8px; padding: 0 12px; min-height: 44px; font-size: 13px; }
+  .masked .amt { filter: blur(7px); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 8px 4px; border-top: 1px solid var(--line); text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .acct { font-size: 12px; font-weight: 700; color: var(--muted); margin: 12px 0 0; }
+  .unknown { color: var(--warn); font-size: 12px; }
+
+  /* 3. News tabs */
+  .tabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 8px; }
+  .tabs button { flex: 0 0 auto; min-height: 40px; padding: 0 14px; border-radius: 999px;
+    border: 1px solid var(--line); background: transparent; color: var(--text); font-size: 14px; }
+  .tabs button[aria-selected="true"] { background: var(--blue-600); border-color: var(--blue-600); color: #fff; }
+  .article { padding: 12px 0; border-top: 1px solid var(--line); }
+  .article p { margin: 4px 0; font-size: 15px; }
+
+  /* 4. Tracker */
+  .proj { border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-top: 10px; }
+  .steps { display: flex; gap: 4px; margin: 8px 0; }
+  .steps span { flex: 1; text-align: center; font-size: 11px; padding: 4px 0; border-radius: 4px;
+    background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+  .steps span.on { background: var(--blue-600); color: #fff; border-color: var(--blue-600); }
+  .proj .next { font-size: 14px; }
+
+  /* 5. Action */
+  .act-row { display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); align-items: flex-start; }
+  .act-row:first-of-type { border-top: 0; }
+  .due { flex: 0 0 56px; text-align: center; font-size: 12px; border-radius: 8px; padding: 6px 0;
+    background: var(--bg); border: 1px solid var(--line); }
+  .due b { display: block; font-size: 16px; }
+  .due.today { border-color: var(--down); color: var(--down); }
+  .act-row .body { flex: 1; min-width: 0; }
+  .act-row .links a { display: inline-flex; align-items: center; min-height: 44px; margin-right: 14px; font-size: 14px; }
+
+  /* 未取得の表示 */
+  .missing { border: 1px dashed var(--muted); border-radius: 10px; padding: 10px 12px;
+    color: var(--muted); font-size: 14px; margin-top: 10px; }
+
+  /* 6. Audit */
+  dl.audit { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 13px; margin: 0; }
+  dl.audit dt { color: var(--muted); }
+  dl.audit dd { margin: 0; overflow-wrap: anywhere; }
+
+  /* 下部固定メニュー */
+  nav.jump { position: fixed; left: 0; right: 0; bottom: 0; background: var(--navy-900);
+    display: flex; justify-content: space-around; padding: 4px 0 calc(4px + env(safe-area-inset-bottom)); }
+  nav.jump a { color: #fff; font-size: 11px; min-height: 48px; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; flex: 1; }
+  nav.jump a b { font-size: 15px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="masthead">
+    <p class="brand">Executive Morning Brief</p>
+    <div class="meta">
+      <span>2026年10月11日（日）</span><span>第 128 号</span><span>データ確認 05:34 JST</span><span>v1</span>
+    </div>
+    <div class="status"><span class="dot"></span>一部未取得あり（投資信託の基準価額）</div>
+    <div class="daynav">
+      <a href="#">← 前日</a><a href="#">過去記事</a><a href="#">翌日 →</a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <section id="summary">
+    <h2>Executive Summary <small>30秒で読む</small></h2>
+    <ol class="top3">
+      <li><span class="tag act">要対応</span><b>取引先Aへの見積回答が本日期限</b><br>
+        <span class="src">Gmail・返信待ち3日目</span> ・ <a href="#action">Action Centerへ</a></li>
+      <li><span class="tag watch">注目</span><b>サンプル指数が前日比 −1.8%、保有評価額も下落</b><br>
+        <span class="src">取引日 2026-10-09（金）終値</span> ・ <a href="#market">Marketへ</a></li>
+      <li><span class="tag done">完了</span><b>サンプル案件Bの検品が終わり、業務反映待ち</b><br>
+        <span class="src">Task_Events 10/10 21:12</span> ・ <a href="#tracker">Trackerへ</a></li>
+    </ol>
+  </section>
+
+  <section id="market">
+    <h2>Market &amp; Portfolio <small>取引日 10/9（金）</small></h2>
+    <div class="indices num">
+      <div class="idx"><div class="k">日経平均</div><div class="v">00,000</div><div class="down">▼ 1.8%</div></div>
+      <div class="idx"><div class="k">TOPIX</div><div class="v">0,000</div><div class="down">▼ 1.2%</div></div>
+      <div class="idx"><div class="k">S&amp;P 500</div><div class="v">0,000</div><div class="up">▲ 0.4%</div></div>
+      <div class="idx"><div class="k">USD/JPY</div><div class="v">000.00</div><div class="up">▲ 0.3円</div></div>
+    </div>
+
+    <div id="pf">
+      <div class="pf-head">
+        <div><div class="src">保有評価額（確定分のみ）</div>
+          <div class="pf-total num"><span class="amt">¥0,000,000</span> <span class="down" style="font-size:14px">▼ <span class="amt">¥00,000</span></span></div></div>
+        <button class="mask" type="button" aria-pressed="true">金額を表示</button>
+      </div>
+
+      <p class="acct">特定口座</p>
+      <table class="num">
+        <thead><tr><th>銘柄</th><th>数量</th><th>前日比</th><th>評価損益</th></tr></thead>
+        <tbody>
+          <tr><td><a href="#">サンプル株式A</a></td><td class="amt">000</td><td class="down">▼2.1%</td><td class="up amt">+¥00,000</td></tr>
+          <tr><td><a href="#">サンプル株式B</a></td><td class="amt">000</td><td class="up">▲0.5%</td><td><span class="unknown">取得原価未確定</span></td></tr>
+        </tbody>
+      </table>
+
+      <p class="acct">NISA</p>
+      <table class="num">
+        <thead><tr><th>銘柄</th><th>数量</th><th>前日比</th><th>評価損益</th></tr></thead>
+        <tbody>
+          <tr><td><a href="#">サンプル投信C</a></td><td class="amt">0,000口</td><td>—</td><td>—</td></tr>
+        </tbody>
+      </table>
+      <div class="missing">未取得: サンプル投信Cの基準価額（取得元が応答なし 05:31）。前営業日の値も表示していません。<br>未確定の約定 1件（10/10 積立）— 確認後に反映します。</div>
+    </div>
+  </section>
+
+  <section id="news">
+    <h2>News &amp; Insights <small>出典・日付つき</small></h2>
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-tab="eco">経済</button>
+      <button role="tab" aria-selected="false" data-tab="ai">AI</button>
+      <button role="tab" aria-selected="false" data-tab="soc">社会</button>
+      <button role="tab" aria-selected="false" data-tab="moto">モータースポーツ</button>
+    </div>
+    <div data-panel="eco">
+      <div class="article"><h3><a href="#">（見出しサンプル）中央銀行が政策金利を据え置き</a></h3>
+        <p>2行の要約がここに入ります。事実と見立てを分け、見立てには「見立て」と明記します。</p>
+        <span class="src">出典: サンプル通信 ・ 公開 10/10 15:02 ・ 確認 05:33</span></div>
+      <div class="article"><h3><a href="#">（見出しサンプル）円相場の動き</a></h3>
+        <p>背景（以前の発表）と今回の新しい動きを区別して書きます。</p>
+        <span class="src">出典: サンプル新聞 ・ 公開 10/10 22:40 ・ 確認 05:33</span></div>
+    </div>
+    <div data-panel="ai" hidden>
+      <div class="article"><h3><a href="#">（見出しサンプル）AI関連の発表</a></h3>
+        <p>一次発表の主張と、第三者による検証を区別して書きます。</p>
+        <span class="src">出典: サンプル公式ブログ ・ 公開 10/10 ・ 確認 05:33</span></div>
+    </div>
+    <div data-panel="soc" hidden><div class="missing">本日は該当なし（件数を埋めるための水増しはしません）</div></div>
+    <div data-panel="moto" hidden>
+      <div class="article"><h3><a href="#">（見出しサンプル）レース結果</a></h3>
+        <p>開催日と記事の公開日を分けて表示します。</p>
+        <span class="src">出典: サンプル主催者 ・ 公開 10/10 ・ 確認 05:33</span></div>
+    </div>
+    <p class="src" style="margin-top:10px">編集版の解説は <a href="#">今朝のChatGPT配信</a> で読めます。</p>
+  </section>
+
+  <section id="tracker">
+    <h2>AI Project Tracker <small>Task_Events 10/11 05:30 時点</small></h2>
+    <div class="proj">
+      <h3>サンプル案件B（画面改修）</h3>
+      <span class="src">担当: Claude Code → 検品: Codex</span>
+      <div class="steps"><span class="on">作業済</span><span class="on">検品済</span><span>業務反映</span></div>
+      <p class="next">次の一手: SHUNが本番反映を承認 ・ <a href="#">PR</a> ・ <a href="#">テスト結果</a></p>
+    </div>
+    <div class="proj">
+      <h3>サンプル案件D（データ更新）</h3>
+      <span class="src">担当: AGY ・ <span class="unknown">8日間更新なし（止まっている可能性）</span></span>
+      <div class="steps"><span class="on">作業済</span><span>検品済</span><span>業務反映</span></div>
+      <p class="next">次の一手: 成果物の検品 ・ <a href="#">成果物</a></p>
+    </div>
+  </section>
+
+  <section id="action">
+    <h2>Action Center <small>期限の近い順</small></h2>
+    <div class="act-row">
+      <div class="due today num"><b>今日</b>期限</div>
+      <div class="body"><b>取引先Aへ見積回答</b><br><span class="src">返信待ち 3日目 ・ 受信 10/8</span>
+        <div class="links"><a href="#">Gmailで開く</a><a href="#">関連資料</a></div></div>
+    </div>
+    <div class="act-row">
+      <div class="due num"><b>10/14</b>火</div>
+      <div class="body"><b>サンプル申請の承認待ち</b><br><span class="src">承認者: SHUN ・ Drive</span>
+        <div class="links"><a href="#">Driveで開く</a></div></div>
+    </div>
+    <div class="act-row">
+      <div class="due num"><b>—</b>未定</div>
+      <div class="body"><b>やり忘れ候補: 先週の依頼メールに未返信</b><br><span class="src">送信履歴との照合で検出</span>
+        <div class="links"><a href="#">Gmailで開く</a></div></div>
+    </div>
+  </section>
+
+  <section id="audit">
+    <h2>Sources &amp; Audit</h2>
+    <dl class="audit num">
+      <dt>Gmail</dt><dd>成功 05:31（対象 直近72時間）</dd>
+      <dt>Drive</dt><dd>成功 05:32（台帳の最終同期 10/11 01:12）</dd>
+      <dt>株価</dt><dd>成功 05:33（取引日 10/9）</dd>
+      <dt>投資信託</dt><dd class="down">失敗 05:31（応答なし）</dd>
+      <dt>ニュース</dt><dd>成功 05:33（4分野・6件）</dd>
+      <dt>Board_Digest</dt><dd>前回版（10/10 06:45）</dd>
+      <dt>保存</dt><dd>data/2026/10/2026-10-11.json（v1）・archive保存済</dd>
+    </dl>
+  </section>
+
+</main>
+
+<nav class="jump" aria-label="区画へ移動">
+  <a href="#summary"><b>★</b>要点</a>
+  <a href="#market"><b>¥</b>市場</a>
+  <a href="#news"><b>N</b>ニュース</a>
+  <a href="#tracker"><b>AI</b>進捗</a>
+  <a href="#action"><b>!</b>対応</a>
+</nav>
+
+<script>
+  // 区画ジャンプは同じページ内で動かす（<base target="_top"> の影響を受けないように）
+  document.querySelectorAll('a[href^="#"]').forEach(function (a) { a.target = '_self'; });
+
+  // 金額の目隠し（初期は伏せる）
+  var pf = document.getElementById('pf');
+  var maskBtn = pf.querySelector('button.mask');
+  pf.classList.add('masked');
+  maskBtn.addEventListener('click', function () {
+    var masked = pf.classList.toggle('masked');
+    maskBtn.setAttribute('aria-pressed', String(masked));
+    maskBtn.textContent = masked ? '金額を表示' : '金額を隠す';
+  });
+
+  // ニュースの分野切替
+  var tabs = document.querySelectorAll('.tabs button');
+  tabs.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      tabs.forEach(function (b) { b.setAttribute('aria-selected', String(b === btn)); });
+      document.querySelectorAll('[data-panel]').forEach(function (p) {
+        p.hidden = p.getAttribute('data-panel') !== btn.dataset.tab;
+      });
+    });
+  });
+</script>
+</body>
+</html>
