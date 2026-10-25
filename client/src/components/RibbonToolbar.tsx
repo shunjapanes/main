@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import {
-  FilePlus, FolderOpen, Save, SaveAll, Download, Clock, PlusSquare,
-  Undo2, Redo2, Scissors, Copy, Clipboard, Filter, ArrowUpAZ, ArrowDownAZ, ALargeSmall,
+  FilePlus, FolderOpen, SaveAll, Download, Clock, PlusSquare,
+  Undo2, Redo2, Scissors, Copy, Clipboard, ALargeSmall,
   RowsIcon, Columns2, Trash2, ArrowUpFromLine, ArrowDownToLine,
   MoveUp, MoveDown, CopyPlus, AlignLeft, WrapText, PanelLeft, AlignVerticalJustifyCenter,
-  Shrink, Highlighter, Layers, RefreshCw,
-  Database, Link, Globe, BarChart2, BookOpen, HelpCircle, Eraser,
+  Shrink, Highlighter, RefreshCw,
+  Database, Link, Globe, BookOpen, HelpCircle, Eraser,
   ArrowLeftToLine, ArrowRightToLine, Search, Bug
 } from 'lucide-react'
 import RibbonGroup from './RibbonGroup'
@@ -47,7 +47,7 @@ export default function RibbonToolbar({ onFocusSearch, onOpenFile, toggleStates 
       {/* Ribbon content */}
       <div className="flex flex-row items-stretch h-[72px] gap-0 overflow-x-auto overflow-y-hidden">
         {activeTab === 'ファイル' && <FileTab onOpenFile={onOpenFile} />}
-        {activeTab === 'ホーム' && <HomeTab onFocusSearch={onFocusSearch} toggleStates={toggleStates} />}
+        {activeTab === 'ホーム' && <HomeTab onFocusSearch={onFocusSearch} />}
         {activeTab === 'データ' && <DataTab />}
         {activeTab === '表示' && <ViewTab toggleStates={toggleStates} />}
         {activeTab === 'ツール' && <ToolsTab />}
@@ -70,8 +70,7 @@ function FileTab({ onOpenFile }: { onOpenFile?: () => void }) {
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="保存">
-        <RibbonButton icon={Save} label="上書き保存" onClick={() => send('save')} />
-        <RibbonButton icon={SaveAll} label="名前を付けて保存" onClick={() => send('saveAs')} />
+        <RibbonButton icon={SaveAll} label="名前を付けて保存" onClick={() => send('saveAs')} title="名前を付けて保存 (Ctrl+S)" />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="エクスポート">
@@ -87,7 +86,7 @@ function FileTab({ onOpenFile }: { onOpenFile?: () => void }) {
   )
 }
 
-function HomeTab({ onFocusSearch, toggleStates }: { onFocusSearch?: () => void; toggleStates?: ToggleStates }) {
+function HomeTab({ onFocusSearch }: { onFocusSearch?: () => void }) {
   return (
     <>
       <RibbonGroup label="元に戻す">
@@ -99,12 +98,6 @@ function HomeTab({ onFocusSearch, toggleStates }: { onFocusSearch?: () => void; 
         <RibbonButton icon={Scissors} label="切り取り" onClick={() => send('cut')} title="切り取り (Ctrl+X)" />
         <RibbonButton icon={Copy} label="コピー" onClick={() => send('copy')} title="コピー (Ctrl+C)" />
         <RibbonButton icon={Clipboard} label="貼り付け" onClick={() => send('paste')} title="貼り付け (Ctrl+V)" />
-      </RibbonGroup>
-      <Divider />
-      <RibbonGroup label="フィルター・並べ替え">
-        <RibbonButton icon={Filter} label="フィルター" onClick={() => send('toggleFilter')} title="フィルター行の表示切替" active={toggleStates?.filterActive} />
-        <RibbonButton icon={ArrowUpAZ} label="昇順" onClick={() => send('sortAsc')} title="昇順ソート" />
-        <RibbonButton icon={ArrowDownAZ} label="降順" onClick={() => send('sortDesc')} title="降順ソート" />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="セル">
@@ -167,7 +160,6 @@ function ViewTab({ toggleStates }: { toggleStates?: ToggleStates }) {
       <Divider />
       <RibbonGroup label="強調">
         <RibbonButton icon={Highlighter} label="条件付き強調" onClick={() => send('toggleCondHL')} title="条件付きハイライト切替" active={toggleStates?.condHLActive} />
-        <RibbonButton icon={Layers} label="重複強調" onClick={() => send('dupHighlight')} title="重複行を強調表示" />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="リセット">
@@ -187,10 +179,6 @@ function ToolsTab() {
       <Divider />
       <RibbonGroup label="出力・プレビュー">
         <RibbonButton icon={Globe} label="プレビュー" onClick={() => send('htmlPreview')} title="HTMLプレビューを表示" />
-      </RibbonGroup>
-      <Divider />
-      <RibbonGroup label="分析">
-        <RibbonButton icon={BarChart2} label="列統計" onClick={() => send('colStats')} title="選択列の統計情報を表示" />
       </RibbonGroup>
       <Divider />
       <RibbonGroup label="デバッグ">

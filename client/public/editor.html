@@ -1056,9 +1056,6 @@
       td.hl-num-neg {
         background: rgba(239, 68, 68, 0.1) !important;
       }
-      td.hl-dup {
-        background: rgba(168, 85, 247, 0.1) !important;
-      }
 
       /* ===価格連携チェック=== */
       td.price-ng {
@@ -1449,83 +1446,6 @@
         color: #ef4444;
       }
 
-      /* ===重複ハイライトダイアログ=== */
-      #dup-hl-dialog {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.4);
-        z-index: 1500;
-        align-items: center;
-        justify-content: center;
-      }
-      #dup-hl-dialog.show {
-        display: flex;
-      }
-      #dup-hl-content {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        padding: 22px 26px;
-        width: min(340px, calc(100vw - 32px));
-        font-family: var(--font-ui);
-      }
-      #dup-hl-content h2 {
-        font-size: 14px;
-        font-weight: 700;
-        margin-bottom: 14px;
-      }
-      #dup-hl-content label {
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--text-dim);
-        display: block;
-        margin-bottom: 5px;
-      }
-      #dup-hl-col {
-        width: 100%;
-        padding: 5px 8px;
-        font-size: 12px;
-        border: 1px solid var(--border);
-        background: var(--surface2);
-        color: var(--text);
-        outline: none;
-        margin-bottom: 16px;
-      }
-      #dup-hl-col:focus {
-        border-color: var(--accent);
-      }
-      .dup-hl-btns {
-        display: flex;
-        gap: 8px;
-        justify-content: flex-end;
-      }
-      .dup-hl-btns button {
-        padding: 6px 16px;
-        font-size: 12px;
-        border: 1px solid var(--border);
-        cursor: pointer;
-      }
-      #dup-hl-run {
-        background: #a855f7;
-        color: #fff;
-      }
-      #dup-hl-run:hover {
-        opacity: 0.88;
-      }
-      #dup-hl-clear {
-        background: var(--surface2);
-      }
-      #dup-hl-clear:hover {
-        background: #e5e5e7;
-      }
-      #dup-hl-close {
-        background: transparent;
-        color: var(--text-dim);
-      }
-      #dup-hl-close:hover {
-        background: var(--surface2);
-      }
-
       /* ===セル折り返し=== */
       body.wrap-cells tbody td {
         white-space: pre-wrap;
@@ -1869,6 +1789,24 @@
         >
           ファイルを選択
         </button>
+        <button
+          type="button"
+          id="btn-drop-blank"
+          style="
+            display: none;
+            margin-top: 6px;
+            padding: 4px 8px;
+            font-size: 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            text-decoration: underline;
+            cursor: pointer;
+          "
+          aria-label="ファイルを開かずに空のシートを編集する"
+        >
+          空のシートに直接入力する
+        </button>
       </div>
       <div id="table-container">
         <table
@@ -1986,27 +1924,6 @@
       aria-label="TSV/CSVファイルを開く"
       style="display: none"
     />
-
-    <!-- 重複ハイライトダイアログ -->
-    <div
-      id="dup-hl-dialog"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="dup-hl-title"
-    >
-      <div id="dup-hl-content">
-        <h2 id="dup-hl-title">重複ハイライト（列指定）</h2>
-        <label for="dup-hl-col"
-          >対象列（この列の値が重複している行を紫でハイライト）</label
-        >
-        <select id="dup-hl-col" aria-label="ハイライト対象の列を選択"></select>
-        <div class="dup-hl-btns">
-          <button type="button" id="dup-hl-close" aria-label="重複ハイライトダイアログを閉じる">閉じる</button>
-          <button type="button" id="dup-hl-clear" aria-label="重複ハイライトをクリア">クリア</button>
-          <button type="button" id="dup-hl-run" aria-label="重複ハイライトを実行">ハイライト</button>
-        </div>
-      </div>
-    </div>
 
     <!-- リロード警告ダイアログ -->
     <div
@@ -2254,13 +2171,13 @@
           <div class="man-row"><span>列の挿入・削除</span><span class="man-key">左/右に挿入、削除（複数列一括も可）</span></div>
           <div class="man-row"><span>行・列の非表示</span><span class="man-key">再表示も同メニューから</span></div>
           <div class="man-row"><span>列のフリーズ</span><span class="man-key">指定列まで固定表示（横スクロール時に固定）</span></div>
-          <div class="man-row"><span>重複行をハイライト</span><span class="man-key">完全一致行を紫色で表示</span></div>
+          <div class="man-row"><span>重複行を削除</span><span class="man-key">完全一致行を1件だけ残して削除</span></div>
           <div class="man-row"><span>条件付きハイライト</span><span class="man-key">空セル・正数・負数を色分け表示</span></div>
         </div>
 
         <h2>ファイルタブ</h2>
         <p style="font-size: 12px; color: var(--text-dim)">
-          複数のファイルを同時に開いてタブで切り替えられます。タブの × で閉じます（未保存の場合は確認あり）。「＋」ボタンで空の新規シートを追加。
+          複数のファイルを同時に開いてタブで切り替えられます。タブの × で閉じます（未保存の場合は確認あり）。「＋」ボタンで新規シートを追加すると、そのシートにファイルを開く画面（ドラッグ＆ドロップ可）が表示されます。空のまま編集したい場合は「空のシートに直接入力する」を押します。
         </p>
 
         <h2>席種エリアマスター対応</h2>
@@ -2431,6 +2348,21 @@
           cap.textContent = `${state.fileName || "TSV/CSV"} データ編集グリッド`;
       }
 
+      // ドロップ画面（ファイルを開く画面）を表示する。
+      // blankSheet=true のときは「空のまま編集する」導線も一緒に出す。
+      function showDropZone(blankSheet) {
+        els.dropZone.classList.remove("hidden");
+        els.dropZone.classList.remove("drag-over");
+        els.container.style.display = "none";
+        const blankBtn = $("btn-drop-blank");
+        if (blankBtn) blankBtn.style.display = blankSheet ? "" : "none";
+      }
+
+      // 現在のタブが「+」で追加された未編集の空シートかどうか
+      function isBlankSheetTab(tab) {
+        return !!tab && tab._isBlankSheet === true && !tab.dirty;
+      }
+
       // ===== タブ管理 =====
       function saveCurrentTab() {
         if (state.activeTab < 0 || !state.tabs.length) return;
@@ -2574,7 +2506,9 @@
         renderHeader();
         state.forceRender = true;
         renderBody();
-        showTable();
+        // 未編集の空シートはファイルを開く画面のまま表示する
+        if (isBlankSheetTab(t)) showDropZone(true);
+        else showTable();
       }
 
       function closeTab(idx) {
@@ -2605,8 +2539,7 @@
         if (!state.tabs.length) {
           state.activeTab = -1;
           $("tab-bar").style.display = "none";
-          els.dropZone.classList.remove("hidden");
-          els.container.style.display = "none";
+          showDropZone(false);
           return;
         }
         const newIdx = Math.min(idx, state.tabs.length - 1);
@@ -2765,6 +2698,11 @@
           else doOpen();
         };
         $("btn-drop-open").onclick = () => els.fileInput.click();
+        $("btn-drop-blank").onclick = () => {
+          showTable();
+          moveTo(0, 0);
+          setStatus("空のシートを編集します");
+        };
         $("btn-save").onclick = saveFile;
         $("btn-undo").onclick = undo;
         $("btn-redo").onclick = redo;
@@ -2872,20 +2810,6 @@
             !e.target.closest("#btn-open-recent")
           )
             closeRecentMenu();
-        });
-
-        // 重複ハイライトダイアログ
-        $("dup-hl-run").onclick = runDupHlByCol;
-        $("dup-hl-clear").onclick = clearDupHl;
-        $("dup-hl-close").onclick = closeDupHlDialog;
-        $("dup-hl-dialog").onclick = (e) => {
-          if (e.target === $("dup-hl-dialog")) closeDupHlDialog();
-        };
-        $("dup-hl-dialog").addEventListener("keydown", (e) => {
-          if (e.key === "Escape") {
-            e.preventDefault();
-            closeDupHlDialog();
-          }
         });
 
         els.fileInput.onchange = (e) => {
@@ -3417,7 +3341,6 @@
           // firstRow → numbered: ヘッダー行をデータの先頭行に戻す（row 0に挿入）
           _shiftRowColors(0, 1);
           _shiftHiddenRows(0, 1);
-          state._dupSet = null;
           state.data.unshift([...state.headers]);
           state.headers = Array.from({ length: state.headers.length }, (_, i) =>
             String(i + 1),
@@ -3436,7 +3359,6 @@
               state.data = [new Array(state.headers.length).fill("")];
             // row 0 削除に伴いインデックスをシフト（hiddenRows/wrapRows）
             _deleteRangeHiddenRows(0, 0);
-            state._dupSet = null;
             // cellColors: row 0 を除去し残りを -1 シフト
             if (Object.keys(state.cellColors).length) {
               const newCC = {};
@@ -3565,7 +3487,6 @@
         state.selected = null;
         state.range = null;
         state.anchor = null;
-        state._dupSet = null; // 行インデックスが変わるためクリア
         applyFilters();
         markDirty();
         renderHeader();
@@ -4240,11 +4161,10 @@
           const i = rows._direct ? vi : rows._indices[vi];
           const row = state.data[i];
           const rowInRange = isRowInRange(i);
-          const isDup = state._dupSet?.has(i) ? " hl-dup" : "";
           // aria-rowindex: ヘッダー行が1なので、データ行は2から始まる
           const wrapCls = state.wrapRows.has(i) ? " wrap-row" : "";
-          html += `<tr role="row" data-row="${i}" aria-rowindex="${i + 2}" class="${isDup ? 'dup-row' : ''}${wrapCls}">`;
-          html += `<td role="rowheader" class="row-num${rowInRange ? " row-selected" : ""}${isDup}" data-rownum="${i}">${i + 1}</td>`;
+          html += `<tr role="row" data-row="${i}" aria-rowindex="${i + 2}" class="${wrapCls.trim()}">`;
+          html += `<td role="rowheader" class="row-num${rowInRange ? " row-selected" : ""}" data-rownum="${i}">${i + 1}</td>`;
           for (const j of visCols) {
             let cls = [];
             if (state.selected?.row === i && state.selected?.col === j)
@@ -5118,7 +5038,6 @@
           saveUndo();
           _shiftRowColors(state.selected.row, 1);
           _shiftHiddenRows(state.selected.row, 1);
-          state._dupSet = null;
           state.data.splice(state.selected.row, 0, new Array(state.headers.length).fill(""));
           markDirty();
           applyFilters();
@@ -5832,7 +5751,6 @@
           : state.data.length;
         _shiftRowColors(insertAt, state.copiedRows.length);
         _shiftHiddenRows(insertAt, state.copiedRows.length);
-        state._dupSet = null;
         state.copiedRows.forEach((r, i) => {
           const row = [...r];
           while (row.length < state.headers.length) row.push("");
@@ -6215,7 +6133,6 @@
                   saveUndo();
                   _shiftRowColors(row, 1);
                   _shiftHiddenRows(row, 1);
-                  state._dupSet = null;
                   state.data.splice(
                     row,
                     0,
@@ -6234,7 +6151,6 @@
                   saveUndo();
                   _shiftRowColors(row + 1, 1);
                   _shiftHiddenRows(row + 1, 1);
-                  state._dupSet = null;
                   state.data.splice(
                     row + 1,
                     0,
@@ -6377,7 +6293,6 @@
                   state.selected = null;
                   state.range = null;
                   state.anchor = null;
-                  state._dupSet = null;
                   applyFilters();
                   markDirty();
                   renderHeader();
@@ -6413,7 +6328,6 @@
                   state.selected = null;
                   state.range = null;
                   state.anchor = null;
-                  state._dupSet = null;
                   applyFilters();
                   markDirty();
                   renderHeader();
@@ -6431,10 +6345,6 @@
                   state.selected = { row, col };
                   toggleFreezeColumn();
                 },
-              },
-              {
-                label: `「${getDisplayHeader(col)}」の統計情報`,
-                action: () => showColStats(col),
               },
               { sep: true },
               {
@@ -6536,8 +6446,6 @@
               { label: "空行を一括削除", action: deleteEmptyRows },
               { label: "前後空白をトリム", action: trimAllCells },
               { sep: true },
-              { label: "重複ハイライト（全列）", action: highlightDuplicates },
-              { label: "重複ハイライト（列指定）", action: openDupHlDialog },
               {
                 label: state.conditionalHL
                   ? "条件付きハイライト OFF"
@@ -6727,8 +6635,6 @@
         state.regexMode = false;
         state.conditionalHL = false;
         state.priceRef = null;
-        state._dupSet = null;
-        state._dupCol = null;
         state.cellColors = {};
         state.dirty = false;
         document.body.classList.remove("wrap-cells");
@@ -6785,9 +6691,12 @@
         renderHeader();
         state.forceRender = true;
         renderBody();
-        showTable();
+        // 追加直後はファイルを開く画面を表示（そのままファイルを読み込める）
+        showDropZone(true);
         markClean();
-        setStatus(`新しいシート「${state.fileName}」を作成しました`);
+        setStatus(
+          `新しいシート「${state.fileName}」を作成しました。ファイルを開くか、空のまま編集できます`,
+        );
       }
 
       function addRowBelow() {
@@ -6795,7 +6704,6 @@
         const at = state.selected ? state.selected.row + 1 : state.data.length;
         _shiftRowColors(at, 1);
         _shiftHiddenRows(at, 1);
-        state._dupSet = null;
         state.data.splice(at, 0, Array(state.headers.length).fill(""));
         markDirty();
         applyFilters();
@@ -6817,7 +6725,6 @@
         if (state.data.length <= delCount) return;
         saveUndo();
         state.data.splice(r1, delCount);
-        state._dupSet = null;
         _deleteRangeHiddenRows(r1, r2);
         // 削除行の色を除去し、後続行のインデックスをシフト
         const newCC = {};
@@ -7115,7 +7022,6 @@
         if (!state.undoStack.length) return;
         state.redoStack.push(cloneState());
         restoreState(state.undoStack.pop());
-        state._dupSet = null; // 行インデックスが変わる可能性があるためクリア
         markDirty();
         applyFilters();
         if (els.search.value) _refreshSearchHits();
@@ -7128,7 +7034,6 @@
         if (!state.redoStack.length) return;
         state.undoStack.push(cloneState());
         restoreState(state.redoStack.pop());
-        state._dupSet = null;
         markDirty();
         applyFilters();
         if (els.search.value) _refreshSearchHits();
@@ -7558,7 +7463,6 @@
         saveUndo();
         _swapRowColors(r - 1, r);
         _swapHiddenRows(r - 1, r);
-        state._dupSet = null;
         [state.data[r - 1], state.data[r]] = [state.data[r], state.data[r - 1]];
         state.selected.row = r - 1;
         if (state.anchor) state.anchor.row = r - 1;
@@ -7574,7 +7478,6 @@
         saveUndo();
         _swapRowColors(r, r + 1);
         _swapHiddenRows(r, r + 1);
-        state._dupSet = null;
         [state.data[r], state.data[r + 1]] = [state.data[r + 1], state.data[r]];
         state.selected.row = r + 1;
         if (state.anchor) state.anchor.row = r + 1;
@@ -7591,7 +7494,6 @@
         saveUndo();
         _shiftRowColors(r + 1, 1);
         _shiftHiddenRows(r + 1, 1);
-        state._dupSet = null;
         state.data.splice(r + 1, 0, [...state.data[r]]);
         state.selected.row = r + 1;
         markDirty();
@@ -8588,10 +8490,8 @@
         // HTMLプレビュー解除
         state.htmlPreview = false;
         state.htmlPreviewCol = -1;
-        // 条件付きハイライト・重複ハイライト・カラープレビュー解除
+        // 条件付きハイライト・カラープレビュー解除
         state.conditionalHL = false;
-        state._dupSet = null;
-        state._dupCol = null;
         state.colorPreview = false;
         state.colorPreviewCol = -1;
         // 再描画
@@ -8702,54 +8602,6 @@
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
         setStatus(`絞込保存: ${indices.length}行をエクスポートしました`);
-      }
-
-      // ===== 重複ハイライト（列指定） =====
-      function openDupHlDialog() {
-        const dlg = $("dup-hl-dialog");
-        const sel = $("dup-hl-col");
-        sel.innerHTML = state.headers
-          .map((h, i) => `<option value="${i}">${escHtml(getDisplayHeader(i))}</option>`)
-          .join("");
-        // 現在の dupCol を復元
-        if (state._dupCol != null) sel.value = state._dupCol;
-        dlg.classList.add("show");
-        trapFocus(dlg);
-      }
-      function closeDupHlDialog() {
-        const dlg = $("dup-hl-dialog");
-        releaseFocus(dlg);
-        dlg.classList.remove("show");
-      }
-      function runDupHlByCol() {
-        const col = parseInt($("dup-hl-col").value);
-        if (isNaN(col)) return;
-        state._dupCol = col;
-        const keyMap = new Map();
-        state.data.forEach((row, idx) => {
-          const key = String(row[col] ?? "");
-          if (!keyMap.has(key)) keyMap.set(key, []);
-          keyMap.get(key).push(idx);
-        });
-        const dupIndices = new Set();
-        keyMap.forEach((indices) => {
-          if (indices.length > 1) indices.forEach((i) => dupIndices.add(i));
-        });
-        state._dupSet = dupIndices;
-        state.forceRender = true;
-        renderBody();
-        closeDupHlDialog();
-        setStatus(
-          `「${getDisplayHeader(col)}」列: ${dupIndices.size}行の重複をハイライトしました`,
-        );
-      }
-      function clearDupHl() {
-        state._dupSet = null;
-        state._dupCol = null;
-        state.forceRender = true;
-        renderBody();
-        closeDupHlDialog();
-        setStatus("重複ハイライトをクリアしました");
       }
 
       // ===== 最近開いたファイル =====
@@ -8898,24 +8750,7 @@
         dlg.classList.remove("show");
       }
 
-      // ===== 重複行のハイライト/削除 =====
-      function highlightDuplicates() {
-        const keyMap = new Map();
-        state.data.forEach((row, idx) => {
-          const key = row.join("\t");
-          if (!keyMap.has(key)) keyMap.set(key, []);
-          keyMap.get(key).push(idx);
-        });
-        const dupIndices = new Set();
-        keyMap.forEach((indices) => {
-          if (indices.length > 1) indices.forEach((i) => dupIndices.add(i));
-        });
-        state._dupSet = dupIndices;
-        state.forceRender = true;
-        renderBody();
-        setStatus(`${dupIndices.size}行の重複を検出しました`);
-      }
-
+      // ===== 重複行の削除 =====
       function deleteDuplicates() {
         saveUndo();
         const seen = new Set();
@@ -8950,8 +8785,6 @@
           state.wrapRows   = remapSet(state.wrapRows);
         }
         const removed = before - state.data.length;
-        state._dupSet = null;
-        state._dupCol = null;
         markDirty();
         applyFilters();
         state.forceRender = true;
@@ -8972,43 +8805,6 @@
             ? `${state.freezeCols}列を固定しました`
             : "列固定を解除しました",
         );
-      }
-
-      // ===== 列統計 =====
-      function showColStats(col) {
-        const vals = state.data.map((r) => r[col] ?? "");
-        const nonEmpty = vals.filter((v) => v !== "");
-        const nums = nonEmpty.map(Number).filter((v) => !isNaN(v));
-        const unique = new Set(vals).size;
-        const sum = nums.reduce((a, b) => a + b, 0);
-        const rows = [
-          ["総数", `${vals.length}件`],
-          ["空白", `${vals.length - nonEmpty.length}件`],
-          ["ユニーク", `${unique}種`],
-        ];
-        if (nums.length > 0) {
-          rows.push(["数値", `${nums.length}件`]);
-          rows.push(["合計", fmt(sum)]);
-          rows.push(["平均", fmt(sum / nums.length)]);
-          rows.push(["最小", fmt(Math.min(...nums))]);
-          rows.push(["最大", fmt(Math.max(...nums))]);
-        }
-        const tableHtml = rows.map(([k, v]) =>
-          `<tr><td style="padding:3px 10px 3px 0;color:#666;white-space:nowrap">${k}</td><td style="padding:3px 0;font-weight:600">${v}</td></tr>`
-        ).join("");
-        document.querySelector("._stats-ov")?.remove();
-        const ov = document.createElement("div");
-        ov.className = "modal-overlay show _stats-ov";
-        ov.innerHTML = `<div class="modal-dialog" style="min-width:220px">
-          <div class="modal-title">【${escHtml(getDisplayHeader(col))}】統計</div>
-          <table style="border-collapse:collapse;font-size:13px;margin:8px 0">${tableHtml}</table>
-          <div class="modal-btns"><button class="_stats-ok btn-primary">閉じる</button></div>
-        </div>`;
-        document.body.appendChild(ov);
-        const close = () => { ov.remove(); };
-        ov.querySelector("._stats-ok").onclick = close;
-        ov.onkeydown = (e) => { if (e.key === "Escape") close(); };
-        ov.querySelector("._stats-ok").focus();
       }
 
       // ===== 条件付きハイライト =====
@@ -9373,8 +9169,6 @@
               state.selected = null;
               state.range = null;
               state.anchor = null;
-              state._dupSet = null;
-              state._dupCol = null;
               if (state.priceRef) {
                 state.priceRef = null;
                 $('btn-price-ref').classList.remove('active-state');
@@ -9449,7 +9243,6 @@
             saveUndo();
             _shiftRowColors(r, 1);
             _shiftHiddenRows(r, 1);
-            state._dupSet = null;
             state.data.splice(r, 0, new Array(state.headers.length).fill(''));
             markDirty(); applyFilters(); state.forceRender = true; renderBody();
             moveTo(r, state.selected.col);
@@ -9501,7 +9294,6 @@
           'cycleRowHeight':  function() { cycleRowHeight(); },
           'toggleFitText':   function() { toggleFitText(); _ribSyncToggles(); },
           'toggleCondHL':    function() { toggleConditionalHL(); _ribSyncToggles(); },
-          'dupHighlight':    function() { openDupHlDialog(); },
           'resetView':       function() { resetView(); window.parent.postMessage({ type: 'clearSearch' }, '*'); _ribSyncToggles(); },
           'loadSejMaster':   function() {
             var inp = document.createElement('input');
@@ -9511,19 +9303,6 @@
           },
           'toggleSej':       function() { toggleSejLink(); },
           'htmlPreview':     function() { exportHtmlPreview(); },
-          'colStats':        function() {
-            var col = _ribGetCurCol();
-            if (col < 0) {
-              setStatus('統計を見る列のセルを選択してください');
-              return;
-            }
-            try {
-              showColStats(col);
-            } catch(e) {
-              setStatus('列統計の表示に失敗しました: ' + e.message);
-              console.error('[colStats]', e);
-            }
-          },
           'dictEditor':      function() { openDictEditor(); },
           'showHelp':        function() { showManual(); },
           'debugMemo':       function() { openDebugMemoDialog(); },
